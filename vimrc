@@ -15,25 +15,21 @@ set backspace=indent,eol,start
 
 colorscheme grb256
 if has("vms")
-  set nobackup		" do not keep a backup file, use versions instead
+  set nobackup " do not keep a backup file, use versions instead
 else
-  set backup		" keep a backup file (restore to previous version)
-  set undofile		" keep an undo file (undo changes after closing)
+  set backup " keep a backup file (restore to previous version)
+  set undofile " keep an undo file (undo changes after closing)
 endif
-set history=100		" keep 50 lines of command line history
-set ruler		" show the cursor position all the time
-set showcmd		" display incomplete commands
-set incsearch		" do incremental searching
+set history=100 " keep 100 lines of command line history
+set ruler " show the cursor position all the time
+set showcmd " display incomplete commands
+set incsearch " do incremental searching
 
 " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
 " let &guioptions = substitute(&guioptions, "t", "", "g")
 
 " Don't use Ex mode, use Q for formatting
 map Q gq
-
-" CTRL-U in insert mode deletes a lot.  Use CTRL-G u to first break undo,
-" so that you can undo CTRL-U after inserting a line break.
-inoremap <C-U> <C-G>u<C-U>
 
 " In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
@@ -130,7 +126,7 @@ if has('langmap') && exists('+langnoremap')
 endif
 
 " show line numbers http://jeffkreeftmeijer.com/2012/relative-line-numbers-in-vim-for-super-fast-movement/
-
+ " only show normal line numbers bc relative ones slow down vim a lot
 set nu
 function! NumberToggle()
 if(&relativenumber == 1)
@@ -148,6 +144,8 @@ nnoremap <Leader>w :call NumberToggle()<cr>
 " run pathogen
 execute pathogen#infect()
 set encoding=utf8
+
+" font
 set guifont=Droid\ Sans\ Mono\ for\ Powerline:h11
 
 " RSpec.vim mappings
@@ -163,20 +161,28 @@ set wildignore+=*/tmp/*,*.so,*.swp,*.zip
 
 " remove trailing spaces when saving
 autocmd BufWritePre * %s/\s\+$//e
+
 " remap autocompletion to ctrl space
 inoremap <Nul> <C-n>
+
 " remap quit file to leader q
 noremap <leader>q :q<cr>
+
 " remap save file to leader s
 nnoremap <leader>s :w<cr>
+
 " align  current paragraph mapped to leader a
 noremap <leader>i =ip
+
 " toggle nerdtree with leader b
 map <leader>b :NERDTreeToggle<CR>
+
 " map leader p to ctrlp fuzzy search
 map <leader>p :CtrlP<CR>
+
 " map leader P to refresh ctrlp fuzzy search
 map <leader>P :CtrlPClearCache<CR>
+
 " map leader o to split vetically
 map <leader>o :vsp<CR>
 
@@ -192,14 +198,17 @@ if executable('ag')
   let g:ctrlp_use_caching = 0
 endif
 
-" bind K to grep word under cursor
+" bind leader k to grep word under cursor
 nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
 " bind \ (backward slash) to grep shortcut
 command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
+
 " map leader f to search
 map <leader>f :Ag<SPACE>
+
 " remap Wq to wq (making the typo so often)
 command! Wq wq
+
 " comment line in ruby with leader c
 map <leader>c :norm i#<CR>
