@@ -13,6 +13,7 @@ set nocompatible
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
 
+colorscheme grb256
 if has("vms")
   set nobackup		" do not keep a backup file, use versions instead
 else
@@ -43,7 +44,6 @@ endif
 " Also switch on highlighting the last used search pattern.
 if &t_Co > 2 || has("gui_running")
   syntax on
-  set hlsearch
 endif
 
 " Only do this part when compiled with support for autocommands.
@@ -128,20 +128,78 @@ if has('langmap') && exists('+langnoremap')
   " compatible).
   set langnoremap
 endif
+
 " show line numbers http://jeffkreeftmeijer.com/2012/relative-line-numbers-in-vim-for-super-fast-movement/
-:set relativenumber
+
+set nu
+function! NumberToggle()
+if(&relativenumber == 1)
+  set nonu
+else
+  set nu
+endif
+endfunc
+
+nnoremap <Leader>w :call NumberToggle()<cr>
+
 :au FocusLost * :set number
 :au FocusGained * :set relativenumber
+
 " run pathogen
 execute pathogen#infect()
 set encoding=utf8
 set guifont=Droid\ Sans\ Mono\ for\ Powerline:h11
 
 " RSpec.vim mappings
+let g:rspec_command = "!bundle exec bin/rspec {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
 map <Leader>s :call RunNearestSpec()<CR>
 map <Leader>l :call RunLastSpec()<CR>
 map <Leader>a :call RunAllSpecs()<CR>
+
 " use tab to autocomplete using emmet
 imap <expr> <tab> emmet#expandAbbrIntelligent("\<tab>")
 set wildignore+=*/tmp/*,*.so,*.swp,*.zip
+
+" remove trailing spaces when saving
+autocmd BufWritePre * %s/\s\+$//e
+" remap autocompletion to ctrl space
+inoremap <Nul> <C-n>
+" remap quit file to leader q
+noremap <leader>q :q<cr>
+" remap save file to leader s
+nnoremap <leader>s :w<cr>
+" align  current paragraph mapped to leader a
+noremap <leader>i =ip
+" toggle nerdtree with leader b
+map <leader>b :NERDTreeToggle<CR>
+" map leader p to ctrlp fuzzy search
+map <leader>p :CtrlP<CR>
+" map leader P to refresh ctrlp fuzzy search
+map <leader>P :CtrlPClearCache<CR>
+" map leader o to split vetically
+map <leader>o :vsp<CR>
+
+" The Silver Searcher
+if executable('ag')
+  " Use ag over grep
+  set grepprg=ag\ --nogroup\ --nocolor
+
+  " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
+  let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+
+  " ag is fast enough that CtrlP doesn't need to cache
+  let g:ctrlp_use_caching = 0
+endif
+
+" bind K to grep word under cursor
+nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+
+" bind \ (backward slash) to grep shortcut
+command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
+" map leader f to search
+map <leader>f :Ag<SPACE>
+" remap Wq to wq (making the typo so often)
+command! Wq wq
+" comment line in ruby with leader c
+map <leader>c :norm i#<CR>

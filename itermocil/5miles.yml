@@ -1,0 +1,12 @@
+pre: cd ~/5miles/app && 5miles start
+windows:
+- name: 5miles
+  root: ~/5miles/app
+  layout: main-vertical
+  panes:
+    - vim .
+    - commands:
+      - rails c
+    - commands:
+      - 5miles morning
+      - foreman s
