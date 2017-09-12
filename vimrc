@@ -210,5 +210,8 @@ map <leader>f :Ag<SPACE>
 " remap Wq to wq (making the typo so often)
 command! Wq wq
 
-" comment line in ruby with leader c
-map <leader>c :norm i#<CR>
+" comment line in ruby with leader cc
+map <leader>cc :norm i#<CR>
+
+" uncomment line in ruby with leader cu
+map <leader>cu :norm x<CR>
