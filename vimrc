@@ -9,6 +9,31 @@ let mapleader = " "
 " Use Vim settings, rather than Vi settings (much better!).
 " This must be first, because it changes other options as a side effect.
 set nocompatible
+filetype off " required for vundle setup
+
+" set the runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+" alternatively, pass a path where Vundle should install plugins
+"call vundle#begin('~/some/path/here')
+
+" let Vundle manage Vundle, required
+Plugin 'VundleVim/Vundle.vim'
+Plugin 'bling/vim-airline'
+Plugin 'mattn/emmet-vim'
+Plugin 'tpope/vim-commentary'
+Plugin 'tpope/vim-endwise'
+Plugin 'tpope/vim-rails'
+Plugin 'tpope/vim-sensible'
+Plugin 'tpope/vim-surround'
+Plugin 'airblade/vim-gitgutter'
+Plugin 'ctrlpvim/ctrlp.vim'
+Plugin 'thoughtbot/vim-rspec'
+Plugin 'scrooloose/nerdtree'
+
+" All of your Plugins must be added before the following line
+call vundle#end()            " required
+filetype plugin indent on    " required
 
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
@@ -151,8 +176,6 @@ set guifont=Droid\ Sans\ Mono\ for\ Powerline:h11
 " RSpec.vim mappings
 let g:rspec_command = "!bundle exec bin/rspec {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
-map <Leader>s :call RunNearestSpec()<CR>
-map <Leader>l :call RunLastSpec()<CR>
 map <Leader>a :call RunAllSpecs()<CR>
 
 " use tab to autocomplete using emmet
@@ -215,3 +238,18 @@ map <leader>cc :norm i#<CR>
 
 " uncomment line in ruby with leader cu
 map <leader>cu :norm x<CR>
+
+" map leader os to open schema
+map <Leader>os :sp db/schema.rb<cr>
+
+" map leader r to rails routes
+map <Leader>r :e config/routes.rb<cr>
+
+" display all buffers
+let g:airline#extensions#tabline#enabled = 1
+
+" map leader h to prev buffer
+map <Leader>h :bprev<cr>
+
+" map leader l to next buffer
+map <Leader>l :bnext<cr>
