@@ -30,6 +30,8 @@ Plugin 'airblade/vim-gitgutter'
 Plugin 'ctrlpvim/ctrlp.vim'
 Plugin 'thoughtbot/vim-rspec'
 Plugin 'scrooloose/nerdtree'
+Plugin 'majutsushi/tagbar'
+Plugin 'vim-syntastic/syntastic'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -178,15 +180,17 @@ let g:rspec_command = "!bundle exec bin/rspec {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
 map <Leader>a :call RunAllSpecs()<CR>
 
-" use tab to autocomplete using emmet
-imap <expr> <tab> emmet#expandAbbrIntelligent("\<tab>")
+" use ,, to trigger emmet
+let g:user_emmet_leader_key=','
+
+
 set wildignore+=*/tmp/*,*.so,*.swp,*.zip
 
 " remove trailing spaces when saving
 autocmd BufWritePre * %s/\s\+$//e
 
 " remap autocompletion to ctrl space
-inoremap <Nul> <C-n>
+" inoremap <Nul> <C-n>
 
 " remap quit file to leader q
 noremap <leader>q :q<cr>
@@ -199,6 +203,9 @@ noremap <leader>i =ip
 
 " toggle nerdtree with leader b
 map <leader>b :NERDTreeToggle<CR>
+
+" toggle tagbar with leader B
+map <leader>B :TagbarToggle<CR>
 
 " map leader p to ctrlp fuzzy search
 map <leader>p :CtrlP<CR>
@@ -253,3 +260,28 @@ map <Leader>h :bprev<cr>
 
 " map leader l to next buffer
 map <Leader>l :bnext<cr>
+
+" dont use mappings form git gutter plugin
+let g:gitgutter_map_keys = 0
+
+" options for tagbar plugin
+let g:tagbar_type_ruby = {
+    \ 'kinds' : [
+        \ 'm:modules',
+        \ 'c:classes',
+        \ 'd:describes',
+        \ 'C:contexts',
+        \ 'f:methods',
+        \ 'F:singleton methods'
+    \ ]
+\ }
+
+" vim syntastic recommended settings
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_wq = 0
