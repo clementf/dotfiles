@@ -1,8 +1,3 @@
-" When started as "evim", evim.vim will already have done these settings.
-if v:progname =~? "evim"
-  finish
-endif
-
 " Leader
 let mapleader = " "
 
@@ -80,24 +75,24 @@ if has("autocmd")
 
   " Put these in an autocmd group, so that we can delete them easily.
   augroup vimrcEx
-  au!
+    au!
 
-  " For all text files set 'textwidth' to 78 characters.
-  autocmd FileType text setlocal textwidth=78
+    " For all text files set 'textwidth' to 78 characters.
+    autocmd FileType text setlocal textwidth=78
 
-  " When editing a file, always jump to the last known cursor position.
-  " Don't do it when the position is invalid or when inside an event handler
-  " (happens when dropping a file on gvim).
-  autocmd BufReadPost *
-    \ if line("'\"") >= 1 && line("'\"") <= line("$") |
-    \   exe "normal! g`\"" |
-    \ endif
+    " When editing a file, always jump to the last known cursor position.
+    " Don't do it when the position is invalid or when inside an event handler
+    " (happens when dropping a file on gvim).
+    autocmd BufReadPost *
+          \ if line("'\"") >= 1 && line("'\"") <= line("$") |
+          \   exe "normal! g`\"" |
+          \ endif
 
   augroup END
 
 else
 
-set autoindent
+  set autoindent
 
 endif " has("autocmd")
 
@@ -118,12 +113,12 @@ set nojoinspaces
 " will use completion if not at beginning
 set wildmode=list:longest,list:full
 function! InsertTabWrapper()
-    let col = col('.') - 1
-    if !col || getline('.')[col - 1] !~ '\k'
-        return "\<tab>"
-    else
-        return "\<c-p>"
-    endif
+  let col = col('.') - 1
+  if !col || getline('.')[col - 1] !~ '\k'
+    return "\<tab>"
+  else
+    return "\<c-p>"
+  endif
 endfunction
 inoremap <Tab> <c-r>=InsertTabWrapper()<cr>
 inoremap <S-Tab> <c-n>
@@ -142,7 +137,7 @@ nnoremap <C-l> <C-w>l
 " Only define it when not defined already.
 if !exists(":DiffOrig")
   command DiffOrig vert new | set bt=nofile | r ++edit # | 0d_ | diffthis
-		  \ | wincmd p | diffthis
+        \ | wincmd p | diffthis
 endif
 
 if has('langmap') && exists('+langnoremap')
@@ -153,14 +148,14 @@ if has('langmap') && exists('+langnoremap')
 endif
 
 " show line numbers http://jeffkreeftmeijer.com/2012/relative-line-numbers-in-vim-for-super-fast-movement/
- " only show normal line numbers bc relative ones slow down vim a lot
+" only show normal line numbers bc relative ones slow down vim a lot
 set nu
 function! NumberToggle()
-if(&relativenumber == 1)
-  set nonu
-else
-  set nu
-endif
+  if(&relativenumber == 1)
+    set nonu
+  else
+    set nu
+  endif
 endfunc
 
 nnoremap <Leader>w :call NumberToggle()<cr>
@@ -168,12 +163,7 @@ nnoremap <Leader>w :call NumberToggle()<cr>
 :au FocusLost * :set number
 :au FocusGained * :set relativenumber
 
-" run pathogen
-execute pathogen#infect()
 set encoding=utf8
-
-" font
-set guifont=Droid\ Sans\ Mono\ for\ Powerline:h11
 
 " RSpec.vim mappings
 let g:rspec_command = "!bundle exec bin/rspec {spec}"
@@ -231,20 +221,11 @@ endif
 " bind leader k to grep word under cursor
 nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
-" bind \ (backward slash) to grep shortcut
-command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
-
 " map leader f to search
 map <leader>f :Ag<SPACE>
 
 " remap Wq to wq (making the typo so often)
 command! Wq wq
-
-" comment line in ruby with leader cc
-map <leader>cc :norm i#<CR>
-
-" uncomment line in ruby with leader cu
-map <leader>cu :norm x<CR>
 
 " map leader os to open schema
 map <Leader>os :sp db/schema.rb<cr>
@@ -266,15 +247,15 @@ let g:gitgutter_map_keys = 0
 
 " options for tagbar plugin
 let g:tagbar_type_ruby = {
-    \ 'kinds' : [
-        \ 'm:modules',
-        \ 'c:classes',
-        \ 'd:describes',
-        \ 'C:contexts',
-        \ 'f:methods',
-        \ 'F:singleton methods'
-    \ ]
-\ }
+      \ 'kinds' : [
+      \ 'm:modules',
+      \ 'c:classes',
+      \ 'd:describes',
+      \ 'C:contexts',
+      \ 'f:methods',
+      \ 'F:singleton methods'
+      \ ]
+      \ }
 
 " vim syntastic recommended settings
 set statusline+=%#warningmsg#
