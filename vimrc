@@ -224,6 +224,9 @@ nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 " map leader f to search
 map <leader>f :Ag<SPACE>
 
+" bind \ (backward slash) to grep shortcut
+command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
+
 " remap Wq to wq (making the typo so often)
 command! Wq wq
 
@@ -266,3 +269,6 @@ let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
 let g:syntastic_check_on_open = 1
 let g:syntastic_check_on_wq = 0
+let g:syntastic_mode_map = {
+      \ "mode": "active",
+      \ "passive_filetypes": ["scss"] }
