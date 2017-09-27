@@ -110,3 +110,5 @@ alias 55c="itermocil corporate"
 alias p2s="5miles prod2stag"
 eval "$(thefuck --alias)"
 
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

@@ -27,6 +27,7 @@ Plugin 'thoughtbot/vim-rspec'
 Plugin 'scrooloose/nerdtree'
 Plugin 'majutsushi/tagbar'
 Plugin 'vim-syntastic/syntastic'
+Plugin 'junegunn/fzf.vim'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -36,6 +37,10 @@ filetype plugin indent on    " required
 set backspace=indent,eol,start
 
 colorscheme grb256
+
+" search using fzf
+set rtp+=/usr/local/opt/fzf
+
 if has("vms")
   set nobackup " do not keep a backup file, use versions instead
 else
@@ -197,11 +202,11 @@ map <leader>b :NERDTreeToggle<CR>
 " toggle tagbar with leader B
 map <leader>B :TagbarToggle<CR>
 
-" map leader p to ctrlp fuzzy search
-map <leader>p :CtrlP<CR>
+" map leader p to fzt fuzzy search
+map <leader>p :Files<CR>
 
-" map leader P to refresh ctrlp fuzzy search
-map <leader>P :CtrlPClearCache<CR>
+" map leader f to  search in buffer
+map <leader>f :BLines<CR>
 
 " map leader o to split vetically
 map <leader>o :vsp<CR>
@@ -216,22 +221,23 @@ if executable('ag')
 
   " ag is fast enough that CtrlP doesn't need to cache
   let g:ctrlp_use_caching = 0
+
+  " bind \ (backward slash) to grep shortcut
+  command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
+
+  " map leader F to search
+  map <leader>F :Ag<SPACE>
 endif
 
 " bind leader k to grep word under cursor
 nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
-" map leader f to search
-map <leader>f :Ag<SPACE>
-
-" bind \ (backward slash) to grep shortcut
-command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
 
 " remap Wq to wq (making the typo so often)
 command! Wq wq
 
 " map leader os to open schema
-map <Leader>os :sp db/schema.rb<cr>
+map <Leader>os db/schema.rb<cr>
 
 " map leader r to rails routes
 map <Leader>r :e config/routes.rb<cr>
