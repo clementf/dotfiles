@@ -28,6 +28,7 @@ Plugin 'scrooloose/nerdtree'
 Plugin 'majutsushi/tagbar'
 Plugin 'vim-syntastic/syntastic'
 Plugin 'junegunn/fzf.vim'
+Plugin 'Chiel92/vim-autoformat'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -241,6 +242,9 @@ map <Leader>os db/schema.rb<cr>
 
 " map leader r to rails routes
 map <Leader>r :e config/routes.rb<cr>
+
+" map leader = to auto format
+map <Leader>= :Autoformat<cr>
 
 " display all buffers
 let g:airline#extensions#tabline#enabled = 1
