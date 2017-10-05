@@ -8,4 +8,9 @@ class Object
   def me
     User.find 4222
   end
+
+  def skip_setup
+    User.last.update(account_has_been_setup: true)
+  end
+
 end
