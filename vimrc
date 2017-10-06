@@ -172,7 +172,7 @@ nnoremap <Leader>w :call NumberToggle()<cr>
 set encoding=utf8
 
 " RSpec.vim mappings
-let g:rspec_command = "!bundle exec bin/rspec {spec}"
+let g:rspec_command = "! NO_COVERAGE=1 bundle exec bin/rspec {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
 map <Leader>a :call RunAllSpecs()<CR>
 
