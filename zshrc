@@ -108,7 +108,11 @@ alias gp="git pull"
 alias 55="itermocil 5miles"
 alias 55c="itermocil corporate"
 alias p2s="5miles prod2stag"
+alias ml="cd ~/projects/coursera/ml"
 eval "$(thefuck --alias)"
 
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+if command -v pyenv 1>/dev/null 2>&1; then
+  eval "$(pyenv init -)"
+fi
