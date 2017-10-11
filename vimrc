@@ -21,6 +21,7 @@ Plugin 'tpope/vim-endwise'
 Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-sensible'
 Plugin 'tpope/vim-surround'
+Plugin 'tpope/vim-fugitive'
 Plugin 'airblade/vim-gitgutter'
 Plugin 'ctrlpvim/ctrlp.vim'
 Plugin 'thoughtbot/vim-rspec'
@@ -28,7 +29,6 @@ Plugin 'scrooloose/nerdtree'
 Plugin 'majutsushi/tagbar'
 Plugin 'vim-syntastic/syntastic'
 Plugin 'junegunn/fzf.vim'
-Plugin 'Chiel92/vim-autoformat'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -257,6 +257,12 @@ map <Leader>l :bnext<cr>
 
 " dont use mappings form git gutter plugin
 let g:gitgutter_map_keys = 0
+
+" mapping to tig (integrates git in vim)
+map <Leader>1 :!tig<CR><CR>
+map <Leader>2 :!tig status<CR><CR>
+map <Leader>3 :!git add .<CR>
+map <Leader>4 :!git commit<CR>
 
 " options for tagbar plugin
 let g:tagbar_type_ruby = {
