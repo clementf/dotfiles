@@ -261,8 +261,9 @@ let g:gitgutter_map_keys = 0
 " mapping to tig (integrates git in vim)
 map <Leader>1 :!tig<CR><CR>
 map <Leader>2 :!tig status<CR><CR>
-map <Leader>3 :!git add .<CR>
-map <Leader>4 :!git commit<CR>
+map <Leader>3 :!git diff<CR><CR>
+map <Leader>4 :!git add .<CR>
+map <Leader>5 :!git commit<CR>
 
 " options for tagbar plugin
 let g:tagbar_type_ruby = {
