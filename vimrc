@@ -23,7 +23,6 @@ Plugin 'tpope/vim-sensible'
 Plugin 'tpope/vim-surround'
 Plugin 'tpope/vim-fugitive'
 Plugin 'airblade/vim-gitgutter'
-Plugin 'ctrlpvim/ctrlp.vim'
 Plugin 'thoughtbot/vim-rspec'
 Plugin 'scrooloose/nerdtree'
 Plugin 'majutsushi/tagbar'
@@ -185,9 +184,6 @@ set wildignore+=*/tmp/*,*.so,*.swp,*.zip
 " remove trailing spaces when saving
 autocmd BufWritePre * %s/\s\+$//e
 
-" remap autocompletion to ctrl space
-" inoremap <Nul> <C-n>
-
 " remap quit file to leader q
 noremap <leader>q :q<cr>
 
@@ -217,18 +213,13 @@ if executable('ag')
   " Use ag over grep
   set grepprg=ag\ --nogroup\ --nocolor
 
-  " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
-  let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
-
-  " ag is fast enough that CtrlP doesn't need to cache
-  let g:ctrlp_use_caching = 0
-
   " bind \ (backward slash) to grep shortcut
   command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
 
-  " map leader F to search
-  map <leader>F :Ag<SPACE>
 endif
+
+" map leader F to search
+map <leader>F :Ag<SPACE>
 
 " bind leader k to grep word under cursor
 nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
