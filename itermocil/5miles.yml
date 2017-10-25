@@ -8,5 +8,4 @@ windows:
     - commands:
       - rails c
     - commands:
-      - 5miles morning
       - foreman s
