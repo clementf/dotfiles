@@ -6,6 +6,6 @@ windows:
   panes:
     - vim .
     - commands:
-      - rails c
+      - foreman run rails c
     - commands:
       - foreman s
