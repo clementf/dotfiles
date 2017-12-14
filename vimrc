@@ -72,37 +72,12 @@ if &t_Co > 2 || has("gui_running")
   syntax on
 endif
 
-" Only do this part when compiled with support for autocommands.
-if has("autocmd")
+set autoindent
+set copyindent " copy previous indentation on autoindenting
+set showmatch " show matching parenthesis
 
-  " Enable file type detection.
-  " Use the default filetype settings, so that mail gets 'tw' set to 72,
-  " 'cindent' is on in C files, etc.
-  " Also load indent files, to automatically do language-dependent indenting.
-  filetype plugin indent on
-
-  " Put these in an autocmd group, so that we can delete them easily.
-  augroup vimrcEx
-    au!
-
-    " For all text files set 'textwidth' to 78 characters.
-    autocmd FileType text setlocal textwidth=78
-
-    " When editing a file, always jump to the last known cursor position.
-    " Don't do it when the position is invalid or when inside an event handler
-    " (happens when dropping a file on gvim).
-    autocmd BufReadPost *
-          \ if line("'\"") >= 1 && line("'\"") <= line("$") |
-          \   exe "normal! g`\"" |
-          \ endif
-
-  augroup END
-
-else
-
-  set autoindent
-
-endif " has("autocmd")
+" Don't show `-- INSERT --` below the statusbar since it's in the statusbar
+set noshowmode
 
 " Softtabs, 2 spaces
 set tabstop=2
@@ -120,6 +95,7 @@ set nojoinspaces
 " will insert tab at beginning of line,
 " will use completion if not at beginning
 set wildmode=list:longest,list:full
+
 function! InsertTabWrapper()
   let col = col('.') - 1
   if !col || getline('.')[col - 1] !~ '\k'
@@ -128,6 +104,7 @@ function! InsertTabWrapper()
     return "\<c-p>"
   endif
 endfunction
+
 inoremap <Tab> <c-r>=InsertTabWrapper()<cr>
 inoremap <S-Tab> <c-n>
 
@@ -283,5 +260,4 @@ let g:syntastic_check_on_wq = 0
 let g:syntastic_mode_map = {
       \ "mode": "active",
       \ "passive_filetypes": ["scss", "py"] }
-
 
