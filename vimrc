@@ -30,6 +30,8 @@ Plugin 'vim-syntastic/syntastic'
 Plugin 'junegunn/fzf.vim'
 Plugin 'rhysd/vim-crystal'
 Plugin 'posva/vim-vue'
+Plugin 'christoomey/vim-system-copy'
+Plugin 'farmergreg/vim-lastplace'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -37,8 +39,6 @@ filetype plugin indent on    " required
 
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
-
-colorscheme grb256
 
 " search using fzf
 set rtp+=/usr/local/opt/fzf
@@ -53,6 +53,7 @@ set history=100 " keep 100 lines of command line history
 set ruler " show the cursor position all the time
 set showcmd " display incomplete commands
 set incsearch " do incremental searching
+set regexpengine=1 " avoid slow scrolling issue with vim ruby (https://github.com/vim-ruby/vim-ruby/issues/243)
 
 " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
 " let &guioptions = substitute(&guioptions, "t", "", "g")
@@ -154,18 +155,13 @@ if has('langmap') && exists('+langnoremap')
   set langnoremap
 endif
 
-" show line numbers http://jeffkreeftmeijer.com/2012/relative-line-numbers-in-vim-for-super-fast-movement/
-" only show normal line numbers bc relative ones slow down vim a lot
-set nu
-function! NumberToggle()
-  if(&relativenumber == 1)
-    set nonu
-  else
-    set nu
-  endif
-endfunc
 
-nnoremap <Leader>w :call NumberToggle()<cr>
+" Numbers
+" With relativenumber and number set, shows relative number but has current
+" number on current line.
+set relativenumber
+set number
+set numberwidth=3
 
 :au FocusLost * :set number
 :au FocusGained * :set relativenumber
@@ -248,6 +244,11 @@ map <Leader>h :bprev<cr>
 " map leader l to next buffer
 map <Leader>l :bnext<cr>
 
+map <Leader>m :Emodel<cr>
+map <Leader>c :Econtroller<cr>
+map <Leader>u :Eunittest<cr>
+map <Leader>v :Eview<cr>
+
 " dont use mappings form git gutter plugin
 let g:gitgutter_map_keys = 0
 
@@ -282,3 +283,5 @@ let g:syntastic_check_on_wq = 0
 let g:syntastic_mode_map = {
       \ "mode": "active",
       \ "passive_filetypes": ["scss", "py"] }
+
+
