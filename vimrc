@@ -32,6 +32,7 @@ Plugin 'rhysd/vim-crystal'
 Plugin 'posva/vim-vue'
 Plugin 'christoomey/vim-system-copy'
 Plugin 'farmergreg/vim-lastplace'
+Plugin 'ngmy/vim-rubocop'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -153,7 +154,6 @@ map <Leader>a :call RunAllSpecs()<CR>
 " use ,, to trigger emmet
 let g:user_emmet_leader_key=','
 
-
 set wildignore+=*/tmp/*,*.so,*.swp,*.zip
 
 " remove trailing spaces when saving
@@ -168,10 +168,7 @@ nnoremap <leader>s :w<cr>
 " align  current paragraph mapped to leader a
 noremap <leader>i =ip
 
-" toggle nerdtree with leader b
 map <leader>b :NERDTreeToggle<CR>
-
-" toggle tagbar with leader B
 map <leader>B :TagbarToggle<CR>
 
 " map leader p to fzt fuzzy search
@@ -203,13 +200,8 @@ nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 " remap Wq to wq (making the typo so often)
 command! Wq wq
 
-" map leader os to open schema
 map <Leader>os db/schema.rb<cr>
-
-" map leader r to rails routes
-map <Leader>r :e config/routes.rb<cr>
-
-" map leader = to auto format
+map <Leader>r :RuboCop<cr>
 map <Leader>= :Autoformat<cr>
 
 " display all buffers
