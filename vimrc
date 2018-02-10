@@ -218,6 +218,8 @@ map <Leader>c :Econtroller<cr>
 map <Leader>u :Eunittest<cr>
 map <Leader>v :Eview<cr>
 
+map <Leader>x :bd<cr>
+
 " dont use mappings form git gutter plugin
 let g:gitgutter_map_keys = 0
 
