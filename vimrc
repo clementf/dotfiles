@@ -22,6 +22,7 @@ Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-sensible'
 Plugin 'tpope/vim-surround'
 Plugin 'tpope/vim-fugitive'
+Plugin 'tpope/vim-dispatch'
 Plugin 'airblade/vim-gitgutter'
 Plugin 'thoughtbot/vim-rspec'
 Plugin 'scrooloose/nerdtree'
@@ -219,6 +220,7 @@ map <Leader>u :Eunittest<cr>
 map <Leader>v :Eview<cr>
 
 map <Leader>x :bd<cr>
+map <Leader>d :call delete(expand('%'))<cr>
 
 " dont use mappings form git gutter plugin
 let g:gitgutter_map_keys = 0
