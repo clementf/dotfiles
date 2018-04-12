@@ -35,6 +35,16 @@ Plugin 'christoomey/vim-system-copy'
 Plugin 'farmergreg/vim-lastplace'
 Plugin 'ngmy/vim-rubocop'
 
+" snippet mgmt
+Plugin 'MarcWeber/vim-addon-mw-utils'
+Plugin 'tomtom/tlib_vim'
+Plugin 'garbas/vim-snipmate'
+
+" js plugins
+Plugin 'pangloss/vim-javascript'
+Plugin 'mxw/vim-jsx'
+
+
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
@@ -109,6 +119,8 @@ endfunction
 
 inoremap <Tab> <c-r>=InsertTabWrapper()<cr>
 inoremap <S-Tab> <c-n>
+imap <C-J> <Plug>snipMateNextOrTrigger
+smap <C-J> <Plug>snipMateNextOrTrigger
 
 " Switch between the last two files
 nnoremap <leader><leader> <c-^>

@@ -1,2 +1,4 @@
 .zshrc
 *.swp
+vim/bundle
+vim/.netrwhist
