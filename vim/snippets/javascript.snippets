@@ -1,5 +1,66 @@
 # Function
 snippet fun
-  function ${1:function_name} (${2:argument}) {
-    ${3:// body...}
-}
+	function ${1:function_name} (${2:argument}) {
+		${3:// body...}
+	}
+
+# tertiary conditional
+snippet t
+	${1:/* condition */} ? ${2:a} : ${3:b}
+
+# switch
+snippet switch
+	switch(${1:expression}) {
+		case '${3:case}':
+			${4:// code}
+			break;
+		${5}
+		default:
+			${2:// code}
+	}
+
+# case
+snippet case
+	case '${1:case}':
+		${2:// code}
+		break;
+	${3}
+
+# for (...) {...}
+snippet for
+	for (var ${2:i} = 0; $2 < ${1:Things}.length; $2${3:++}) {
+		${4:$1[$2]}
+	};
+
+	# Arrow function
+snippet =>
+	(${1}) => {
+		${2}
+	}
+
+# Class
+snippet class
+	class ${1:name} {
+		constructor(${2:arg}) {
+			${3:// init}
+		}
+		${4}
+	}
+
+# For of loop
+snippet forof
+	for (let ${1:s} of ${2:sequence}) {
+		${3}
+	}
+
+# Import
+snippet im
+	import ${1:foo} from '${2:bar}'
+
+# Export
+snippet ex
+	export ${1:default} ${2:bar}
+
+# console.log
+snippet log
+	console.log(${1})
