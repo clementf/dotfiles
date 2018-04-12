@@ -147,8 +147,14 @@ set numberwidth=3
 
 set encoding=utf8
 
+if len($TEST_COMMAND_PREFIX) > 0
+  let test_command = $TEST_COMMAND_PREFIX
+else
+  let test_command = "rspec"
+endif
+
 " RSpec.vim mappings
-let g:rspec_command = "! NO_COVERAGE=1 foreman run bundle exec bin/rspec {spec}"
+let g:rspec_command = ":Dispatch ".test_command." {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
 map <Leader>a :call RunAllSpecs()<CR>
 
@@ -203,7 +209,6 @@ command! Wq wq
 
 map <Leader>os db/schema.rb<cr>
 map <Leader>r :RuboCop<cr>
-map <Leader>= :Autoformat<cr>
 
 " display all buffers
 let g:airline#extensions#tabline#enabled = 1
