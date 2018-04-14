@@ -124,5 +124,6 @@ fi
 
 # ignore files when searching using fzf
 export FZF_DEFAULT_COMMAND='ag --hidden --ignore .git -g ""'
+alias F="fzf"
 
 export EDITOR=vim
