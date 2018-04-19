@@ -219,7 +219,6 @@ nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 " remap Wq to wq (making the typo so often)
 command! Wq wq
 
-map <Leader>os db/schema.rb<cr>
 map <Leader>r :RuboCop<cr>
 
 " display all buffers
