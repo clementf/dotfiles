@@ -114,6 +114,7 @@ alias p2s="5miles prod2stag"
 alias ml="cd ~/projects/coursera/ml"
 alias dev="brew services run mongodb && brew services run postgresql && brew services run redis && brew services run rabbitmq"
 alias stopdev="brew services stop mongodb && brew services stop postgresql && brew services stop redis && brew services stop rabbitmq"
+alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ print $9 ": " $5 }' "
 eval "$(thefuck --alias)"
 
 
