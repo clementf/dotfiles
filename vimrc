@@ -67,9 +67,6 @@ set showcmd " display incomplete commands
 set incsearch " do incremental searching
 set regexpengine=1 " avoid slow scrolling issue with vim ruby (https://github.com/vim-ruby/vim-ruby/issues/243)
 
-" For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
-" let &guioptions = substitute(&guioptions, "t", "", "g")
-
 " Don't use Ex mode, use Q for formatting
 map Q gq
 
@@ -271,5 +268,9 @@ let g:syntastic_check_on_open = 1
 let g:syntastic_check_on_wq = 0
 let g:syntastic_mode_map = {
       \ "mode": "active",
-      \ "passive_filetypes": ["scss", "py"] }
+      \ "passive_filetypes": ["erb", "html", "scss", "py"] }
 
+"Language specific configuration
+""Disable false positives for erb files
+let g:syntastic_eruby_ruby_quiet_messages =
+      \ {'regex': 'possibly useless use of a variable in void context'}
