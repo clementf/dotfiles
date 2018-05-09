@@ -83,19 +83,26 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
+
 alias vs="open -a /Applications/Visual\ Studio\ Code.app"
 alias vimrc="vim ~/.vimrc"
 PATH=/usr/local/share/python:$PATH
 PATH=$PATH:/usr/local/sbin
 alias v="foreman run vim ."
 alias rc="vim ~/.zshrc"
-alias 5="cd ~/5miles/app"
+# global
+alias c="cd ~/code"
+alias dot="cd ~/code/dotfiles"
+
+#specific
 alias 5dp="cd ~/5miles/data_processor"
+alias 5="cd ~/5miles/app"
 alias 5c="cd ~/5miles/corporate-website-5miles"
-alias dot="cd ~/projects/dotfiles"
-alias gcd="git checkout develop"
-alias gcm="git checkout master"
+alias 5mm="5miles morning"
+alias p2s="5miles prod2stag"
+
+alias f="cd ~/code/fuga"
+
 alias grh="git reset --hard"
 alias so="source ~/.zshrc"
 alias gb="git checkout -b"
@@ -104,16 +111,16 @@ alias ta="foreman run bundle exec rspec"
 alias tf="foreman run bundle exec rspec spec/features"
 alias tnf="foreman run bundle exec rspec  --exclude-pattern \"spec/features/**/*_spec.rb\""
 alias con="foreman run rails c"
-alias 5mm="5miles morning"
-alias 55="itermocil 5miles"
-alias 55c="itermocil corporate"
-alias p2s="5miles prod2stag"
-alias ml="cd ~/projects/coursera/ml"
+alias ml="cd ~/code/coursera/ml"
+
 alias dev="brew services run mongodb && brew services run postgresql && brew services run redis && brew services run rabbitmq"
 alias stopdev="brew services stop mongodb && brew services stop postgresql && brew services stop redis && brew services stop rabbitmq"
-alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ print $9  $5 }' "
-eval "$(thefuck --alias)"
 
+alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ print $9  $5 }' "
+
+# tools
+eval "$(thefuck --alias)"
+eval "$(rbenv init -)"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 if command -v pyenv 1>/dev/null 2>&1; then
