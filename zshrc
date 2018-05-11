@@ -51,7 +51,7 @@ ZSH_THEME="spaceship"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git env)
+plugins=(git env z)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -83,7 +83,6 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 export PATH="$HOME/.rbenv/bin:$PATH"
-
 alias vs="open -a /Applications/Visual\ Studio\ Code.app"
 alias vimrc="vim ~/.vimrc"
 PATH=/usr/local/share/python:$PATH
@@ -123,6 +122,7 @@ eval "$(thefuck --alias)"
 eval "$(rbenv init -)"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
 if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv init -)"
 fi
