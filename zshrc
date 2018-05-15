@@ -100,7 +100,10 @@ alias 5c="cd ~/5miles/corporate-website-5miles"
 alias 5mm="5miles morning"
 alias p2s="5miles prod2stag"
 
+# fuga
 alias f="cd ~/code/fuga"
+alias rake="noglob rake"
+alias gcmx="git checkout master-x"
 
 alias grh="git reset --hard"
 alias so="source ~/.zshrc"
