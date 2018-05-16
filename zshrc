@@ -89,6 +89,7 @@ PATH=/usr/local/share/python:$PATH
 PATH=$PATH:/usr/local/sbin
 alias v="foreman run vim ."
 alias rc="vim ~/.zshrc"
+#
 # global
 alias c="cd ~/code"
 alias dot="cd ~/code/dotfiles"
@@ -101,9 +102,7 @@ alias 5mm="5miles morning"
 alias p2s="5miles prod2stag"
 
 # fuga
-alias f="cd ~/code/fuga"
-alias rake="noglob rake"
-alias gcmx="git checkout master-x"
+source ~/.fugarc
 
 alias grh="git reset --hard"
 alias so="source ~/.zshrc"
@@ -114,9 +113,6 @@ alias tf="foreman run bundle exec rspec spec/features"
 alias tnf="foreman run bundle exec rspec  --exclude-pattern \"spec/features/**/*_spec.rb\""
 alias con="foreman run rails c"
 alias ml="cd ~/code/coursera/ml"
-
-alias dev="brew services run mongodb && brew services run postgresql && brew services run redis && brew services run rabbitmq"
-alias stopdev="brew services stop mongodb && brew services stop postgresql && brew services stop redis && brew services stop rabbitmq"
 
 alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ print $9  $5 }' "
 
