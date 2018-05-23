@@ -34,6 +34,7 @@ Plugin 'posva/vim-vue'
 Plugin 'christoomey/vim-system-copy'
 Plugin 'farmergreg/vim-lastplace'
 Plugin 'ngmy/vim-rubocop'
+Plugin 'rainerborene/vim-reek'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -261,6 +262,9 @@ let g:tagbar_type_ruby = {
 set statusline+=%#warningmsg#
 set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
+
+" Reek config
+let g:reek_on_loading = 0
 
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
