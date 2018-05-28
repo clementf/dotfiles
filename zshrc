@@ -116,6 +116,7 @@ alias ml="cd ~/code/coursera/ml"
 
 alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ print $9  $5 }' "
 alias churn="git log --all -M -C --name-only --format='format:' $@ | sort | grep -v '^$' | uniq -c | sort -n | awk 'BEGIN {print \"count\tfile\"} {print $1  $2}'"
+alias showrt="netstat -nr -f inet" # show routing tables
 
 # tools
 eval "$(thefuck --alias)"
