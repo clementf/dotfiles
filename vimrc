@@ -240,10 +240,13 @@ map <Leader>d :call delete(expand('%'))<cr>
 " dont use mappings form git gutter plugin
 let g:gitgutter_map_keys = 0
 
+" ingore whitespace with diffs
+let g:gitgutter_diff_args = '-w'
+
 " mapping to tig (integrates git in vim)
 map <Leader>1 :!tig<CR><CR>
 map <Leader>2 :!tig status<CR><CR>
-map <Leader>3 :!git diff<CR><CR>
+map <Leader>3 :!git diff -w<CR><CR>
 map <Leader>4 :!git add .<CR>
 map <Leader>5 :!git commit<CR>
 
