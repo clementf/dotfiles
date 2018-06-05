@@ -27,7 +27,8 @@ Plugin 'airblade/vim-gitgutter'
 Plugin 'thoughtbot/vim-rspec'
 Plugin 'scrooloose/nerdtree'
 Plugin 'majutsushi/tagbar'
-Plugin 'vim-syntastic/syntastic'
+" Plugin 'vim-syntastic/syntastic'
+Plugin 'w0rp/ale'
 Plugin 'chr4/nginx.vim'
 Plugin 'junegunn/fzf.vim'
 Plugin 'rhysd/vim-crystal'
@@ -270,15 +271,9 @@ set statusline+=%*
 " Reek config
 let g:reek_on_loading = 0
 
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 0
-let g:syntastic_mode_map = {
-      \ "mode": "active",
-      \ "passive_filetypes": ["erb", "html", "scss", "py"] }
-
-"Language specific configuration
-""Disable false positives for erb files
-let g:syntastic_eruby_ruby_quiet_messages =
-      \ {'regex': 'possibly useless use of a variable in void context'}
+let g:ale_linters = {
+      \'ruby': ['rubocop'],
+      \}
+let g:ale_set_highlights = 0 " disable highlighting
+highlight clear ALEErrorSign
+highlight clear ALEWarningSign
