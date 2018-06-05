@@ -220,6 +220,7 @@ nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 command! Wq wq
 
 map <Leader>r :RuboCop<cr>
+map <Leader>ra :RuboCop -a<cr>
 
 " display all buffers
 let g:airline#extensions#tabline#enabled = 1
