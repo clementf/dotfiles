@@ -223,6 +223,22 @@ map <Leader>r :RuboCop<cr>
 
 " display all buffers
 let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#buffer_idx_mode = 1
+
+" fast navigation between buffers
+nmap <leader>1 <Plug>AirlineSelectTab1
+nmap <leader>2 <Plug>AirlineSelectTab2
+nmap <leader>3 <Plug>AirlineSelectTab3
+nmap <leader>4 <Plug>AirlineSelectTab4
+nmap <leader>5 <Plug>AirlineSelectTab5
+nmap <leader>6 <Plug>AirlineSelectTab6
+nmap <leader>7 <Plug>AirlineSelectTab7
+nmap <leader>8 <Plug>AirlineSelectTab8
+nmap <leader>9 <Plug>AirlineSelectTab9
+
+
+let g:airline_powerline_fonts = 1 "use powerline font symbols for fancier airline bar
+
 
 " map leader h to prev buffer
 map <Leader>h :bprev<cr>
@@ -245,11 +261,11 @@ let g:gitgutter_map_keys = 0
 let g:gitgutter_diff_args = '-w'
 
 " mapping to tig (integrates git in vim)
-map <Leader>1 :!tig<CR><CR>
-map <Leader>2 :!tig status<CR><CR>
-map <Leader>3 :!git diff -w<CR><CR>
-map <Leader>4 :!git add .<CR>
-map <Leader>5 :!git commit<CR>
+map <Leader>g1 :!tig<CR><CR>
+map <Leader>g2 :!tig status<CR><CR>
+map <Leader>g3 :!git diff -w<CR><CR>
+map <Leader>g4 :!git add .<CR>
+map <Leader>g5 :!git commit<CR>
 
 " options for tagbar plugin
 let g:tagbar_type_ruby = {
@@ -262,14 +278,6 @@ let g:tagbar_type_ruby = {
       \ 'F:singleton methods'
       \ ]
       \ }
-
-" vim syntastic recommended settings
-set statusline+=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
-set statusline+=%*
-
-" Reek config
-let g:reek_on_loading = 0
 
 let g:ale_linters = {
       \'ruby': ['rubocop'],
