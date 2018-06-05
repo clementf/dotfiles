@@ -96,6 +96,8 @@ set tabstop=2
 set shiftwidth=2
 set shiftround
 set expandtab
+set ttyfast
+set lazyredraw  " prevent redraws while executing
 
 " Display extra whitespace
 set list listchars=tab:»·,trail:·,nbsp:·
@@ -104,8 +106,6 @@ set list listchars=tab:»·,trail:·,nbsp:·
 set nojoinspaces
 
 " Tab completion
-" will insert tab at beginning of line,
-" will use completion if not at beginning
 set wildmode=list:longest,list:full
 
 function! InsertTabWrapper()
@@ -202,11 +202,7 @@ map <leader>o :vsp<CR>
 " The Silver Searcher
 if executable('ag')
   " Use ag over grep
-  set grepprg=ag\ --nogroup\ --nocolor
-
-  " bind \ (backward slash) to grep shortcut
-  command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
-
+  set grepprg=ag\ --nogroup
 endif
 
 " map leader F to search
@@ -239,6 +235,7 @@ nmap <leader>9 <Plug>AirlineSelectTab9
 
 
 let g:airline_powerline_fonts = 1 "use powerline font symbols for fancier airline bar
+
 
 
 " map leader h to prev buffer
