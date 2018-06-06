@@ -203,6 +203,8 @@ map <leader>o :vsp<CR>
 if executable('ag')
   " Use ag over grep
   set grepprg=ag\ --nogroup
+  command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
+
 endif
 
 " map leader F to search
@@ -235,8 +237,6 @@ nmap <leader>9 <Plug>AirlineSelectTab9
 
 
 let g:airline_powerline_fonts = 1 "use powerline font symbols for fancier airline bar
-
-
 
 " map leader h to prev buffer
 map <Leader>h :bprev<cr>
