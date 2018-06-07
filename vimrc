@@ -275,7 +275,7 @@ let g:gitgutter_diff_args = '-w'
 map <Leader>g1 :!tig<CR><CR>
 map <Leader>g2 :!tig status<CR><CR>
 map <Leader>g3 :!git diff -w<CR><CR>
-map <Leader>g4 :!git add .<CR>
+map <Leader>g4 :!git add .<CR><CR>
 map <Leader>g5 :!git commit<CR>
 map <Leader>gb :Gblame<CR>
 
