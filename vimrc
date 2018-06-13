@@ -300,3 +300,7 @@ let g:ale_linters = {
 let g:ale_set_highlights = 0 " disable highlighting
 highlight clear ALEErrorSign
 highlight clear ALEWarningSign
+
+" Reek config
+let g:reek_on_loading = 0
+
