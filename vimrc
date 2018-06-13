@@ -70,6 +70,9 @@ set showcmd " display incomplete commands
 set incsearch " do incremental searching
 set regexpengine=1 " avoid slow scrolling issue with vim ruby (https://github.com/vim-ruby/vim-ruby/issues/243)
 
+highlight ColorColumn ctermbg=235 guibg=#2c2d27
+set cc=80,128 " highlight colums for strict mode and critical length
+
 " Don't use Ex mode, use Q for formatting
 map Q gq
 
