@@ -89,7 +89,8 @@ PATH=/usr/local/share/python:$PATH
 PATH=$PATH:/usr/local/sbin
 alias v="foreman run vim ."
 alias rc="vim ~/.zshrc"
-#
+alias j="z"
+
 # global
 alias c="cd ~/code"
 alias dot="cd ~/code/dotfiles"
