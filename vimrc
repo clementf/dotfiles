@@ -37,6 +37,7 @@ Plugin 'christoomey/vim-system-copy'
 Plugin 'farmergreg/vim-lastplace'
 Plugin 'ngmy/vim-rubocop'
 Plugin 'rainerborene/vim-reek'
+Plugin 'int3/vim-extradite'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -275,11 +276,12 @@ let g:gitgutter_map_keys = 0
 let g:gitgutter_diff_args = '-w'
 
 " mapping to tig (integrates git in vim)
-map <Leader>g1 :!tig<CR><CR>
+map <Leader>g1 :Commits<CR>
 map <Leader>g2 :!tig status<CR><CR>
-map <Leader>g3 :!git diff -w<CR><CR>
+map <Leader>g3 :GFiles?<CR>
 map <Leader>g4 :!git add .<CR><CR>
 map <Leader>g5 :!git commit<CR>
+map <Leader>g6 :Extradite<CR>
 map <Leader>gb :Gblame<CR>
 
 map <Leader>X :%bd<CR>
