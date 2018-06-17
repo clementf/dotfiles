@@ -38,6 +38,9 @@ Plugin 'farmergreg/vim-lastplace'
 Plugin 'ngmy/vim-rubocop'
 Plugin 'rainerborene/vim-reek'
 Plugin 'int3/vim-extradite'
+Plugin 'AndrewRadev/switch.vim'
+Plugin 'tpope/vim-unimpaired'
+Plugin 'vimwiki/vimwiki'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
