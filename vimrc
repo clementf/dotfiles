@@ -289,6 +289,8 @@ map <Leader>gb :Gblame<CR>
 
 map <Leader>X :%bd<CR>
 
+map <Leader>de o(require('pry'); binding.pry)<ESC>
+
 " options for tagbar plugin
 let g:tagbar_type_ruby = {
       \ 'kinds' : [
