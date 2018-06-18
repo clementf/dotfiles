@@ -158,14 +158,11 @@ set numberwidth=3
 
 set encoding=utf8
 
-if len($TEST_COMMAND_PREFIX) > 0
-  let test_command = $TEST_COMMAND_PREFIX
-else
-  let test_command = "rspec"
-endif
+
+map <Leader>T :Dispatch ruby %<CR>
 
 " RSpec.vim mappings
-let g:rspec_command = ":Dispatch ".test_command." {spec}"
+let g:rspec_command = ":Dispatch rspec {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
 map <Leader>a :call RunAllSpecs()<CR>
 
