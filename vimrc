@@ -261,6 +261,12 @@ map <Leader>h :bprev<cr>
 " map leader l to next buffer
 map <Leader>l :bnext<cr>
 
+" skip quickfix buffer when nvigating through buffers
+augroup qf
+  autocmd!
+  autocmd FileType qf set nobuflisted
+augroup END
+
 map <Leader>m :Emodel<cr>
 map <Leader>c :Econtroller<cr>
 map <Leader>u :Eunittest<cr>
