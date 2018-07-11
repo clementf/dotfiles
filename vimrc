@@ -36,7 +36,6 @@ Plugin 'posva/vim-vue'
 Plugin 'christoomey/vim-system-copy'
 Plugin 'farmergreg/vim-lastplace'
 Plugin 'ngmy/vim-rubocop'
-Plugin 'rainerborene/vim-reek'
 Plugin 'int3/vim-extradite'
 Plugin 'AndrewRadev/switch.vim'
 Plugin 'tpope/vim-unimpaired'
@@ -309,10 +308,8 @@ let g:tagbar_type_ruby = {
 let g:ale_linters = {
       \'ruby': ['rubocop', 'reek'],
       \}
+
 let g:ale_set_highlights = 0 " disable highlighting
+let g:ale_sign_column_always = 1
 highlight clear ALEErrorSign
 highlight clear ALEWarningSign
-
-" Reek config
-let g:reek_on_loading = 0
-
