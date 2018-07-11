@@ -307,7 +307,7 @@ let g:tagbar_type_ruby = {
       \ }
 
 let g:ale_linters = {
-      \'ruby': ['rubocop'],
+      \'ruby': ['rubocop', 'reek'],
       \}
 let g:ale_set_highlights = 0 " disable highlighting
 highlight clear ALEErrorSign
