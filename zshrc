@@ -87,7 +87,7 @@ alias vs="open -a /Applications/Visual\ Studio\ Code.app"
 alias vimrc="vim ~/.vimrc"
 PATH=/usr/local/share/python:$PATH
 PATH=$PATH:/usr/local/sbin
-alias v="foreman run vim ."
+alias v='env $(cat .env) vim .'
 alias rc="vim ~/.zshrc"
 alias j="z"
 
