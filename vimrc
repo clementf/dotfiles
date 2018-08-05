@@ -228,7 +228,7 @@ map <leader>F :Ag<SPACE>
 
 " bind leader k to grep word under cursor
 nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
-
+nnoremap <leader>K :call fzf#vim#tags(expand('<cword>'))<CR>
 
 " remap Wq to wq (making the typo so often)
 command! Wq wq
