@@ -73,11 +73,20 @@ set showcmd " display incomplete commands
 set incsearch " do incremental searching
 set regexpengine=1 " avoid slow scrolling issue with vim ruby (https://github.com/vim-ruby/vim-ruby/issues/243)
 
+" Line Numbers
+" With relativenumber and number set, shows relative number but has current
+" number on current line.
+set relativenumber
+set number
+set numberwidth=3
+
+:au FocusLost * :set number
+:au FocusGained * :set relativenumber
+
+set encoding=utf8
+
 highlight ColorColumn ctermbg=235 guibg=#2c2d27
 set cc=80,128 " highlight colums for strict mode and critical length
-
-" Don't use Ex mode, use Q for formatting
-map Q gq
 
 " In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
@@ -88,6 +97,13 @@ endif
 " Also switch on highlighting the last used search pattern.
 if &t_Co > 2 || has("gui_running")
   syntax on
+endif
+
+if has('langmap') && exists('+langnoremap')
+  " Prevent that the langmap option applies to characters that result from a
+  " mapping.  If unset (default), this may break plugins (but it's backward
+  " compatible).
+  set langnoremap
 endif
 
 set autoindent
@@ -137,31 +153,12 @@ nnoremap <C-k> <C-w>k
 nnoremap <C-h> <C-w>h
 nnoremap <C-l> <C-w>l
 
-if has('langmap') && exists('+langnoremap')
-  " Prevent that the langmap option applies to characters that result from a
-  " mapping.  If unset (default), this may break plugins (but it's backward
-  " compatible).
-  set langnoremap
-endif
-
-
-" Line Numbers
-" With relativenumber and number set, shows relative number but has current
-" number on current line.
-set relativenumber
-set number
-set numberwidth=3
-
-:au FocusLost * :set number
-:au FocusGained * :set relativenumber
-
-set encoding=utf8
-
-
+" Don't use Ex mode, use Q for formatting
+map Q gq
 map <Leader>T :Dispatch ruby %<CR>
 
 " RSpec.vim mappings
-let g:rspec_command = ":Dispatch rspec {spec}"
+let g:rspec_command = ":Dispatch bundle exec rspec {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
 map <Leader>a :call RunAllSpecs()<CR>
 
@@ -173,55 +170,20 @@ set wildignore+=*/tmp/*,*.so,*.swp,*.zip
 " remove trailing spaces when saving
 autocmd BufWritePre * %s/\s\+$//e
 
-" remap quit file to leader q
 noremap <leader>q :q<cr>
-
-" remap save file to leader s
 nnoremap <leader>s :w<cr>
 
 " align  current paragraph mapped to leader a
 noremap <leader>i =ip
-
+" map leader p to fzt fuzzy search
+map <leader>p :Files<CR>
+" map leader f to  search in buffer
+map <leader>f :BLines<CR>
+" map leader o to split vetically
+map <leader>o :vsp<CR>
 map <leader>b :NERDTreeToggle<CR>
 map <leader>C :NERDTreeFind<CR>
 map <leader>B :TagbarToggle<CR>
-
-" taken from: https://superuser.com/questions/195022/vim-how-to-synchronize-nerdtree-with-current-opened-tab-file-path
-" autocmd BufEnter * if &modifiable | NERDTreeFind | wincmd p | endif " focus NERDtree on current file when changing buffer
-
-" NERDTress File highlighting
-function! NERDTreeHighlightFile(extension, fg, bg, guifg, guibg)
-  exec 'autocmd filetype nerdtree highlight ' . a:extension .' ctermbg='. a:bg .' ctermfg='. a:fg .' guibg='. a:guibg .' guifg='. a:guifg
-  exec 'autocmd filetype nerdtree syn match ' . a:extension .' #^\s\+.*'. a:extension .'$#'
-endfunction
-
-call NERDTreeHighlightFile('md', 'blue', 'none', '#3366FF', '#151515')
-call NERDTreeHighlightFile('yml', 'yellow', 'none', 'yellow', '#151515')
-call NERDTreeHighlightFile('config', 'yellow', 'none', 'yellow', '#151515')
-call NERDTreeHighlightFile('conf', 'yellow', 'none', 'yellow', '#151515')
-call NERDTreeHighlightFile('json', 'yellow', 'none', 'yellow', '#151515')
-call NERDTreeHighlightFile('html', 'yellow', 'none', 'yellow', '#151515')
-call NERDTreeHighlightFile('styl', 'cyan', 'none', 'cyan', '#151515')
-call NERDTreeHighlightFile('css', 'cyan', 'none', 'cyan', '#151515')
-call NERDTreeHighlightFile('coffee', 'Red', 'none', 'red', '#151515')
-call NERDTreeHighlightFile('js', 'Red', 'none', '#ffa500', '#151515')
-
-" map leader p to fzt fuzzy search
-map <leader>p :Files<CR>
-
-" map leader f to  search in buffer
-map <leader>f :BLines<CR>
-
-" map leader o to split vetically
-map <leader>o :vsp<CR>
-
-" The Silver Searcher
-if executable('ag')
-  " Use ag over grep
-  set grepprg=ag\ --nogroup
-  command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
-
-endif
 
 " map leader F to search
 map <leader>F :Ag<SPACE>
@@ -251,21 +213,6 @@ nmap <leader>7 <Plug>AirlineSelectTab7
 nmap <leader>8 <Plug>AirlineSelectTab8
 nmap <leader>9 <Plug>AirlineSelectTab9
 
-
-let g:airline_powerline_fonts = 1 "use powerline font symbols for fancier airline bar
-
-" map leader h to prev buffer
-map <Leader>h :bprev<cr>
-
-" map leader l to next buffer
-map <Leader>l :bnext<cr>
-
-" skip quickfix buffer when nvigating through buffers
-augroup qf
-  autocmd!
-  autocmd FileType qf set nobuflisted
-augroup END
-
 map <Leader>m :Emodel<cr>
 map <Leader>c :Econtroller<cr>
 map <Leader>u :Eunittest<cr>
@@ -292,6 +239,47 @@ map <Leader>gb :Gblame<CR>
 map <Leader>X :%bd<CR>
 
 map <Leader>de o(require('pry'); binding.pry)<ESC>
+
+let g:airline_powerline_fonts = 1 "use powerline font symbols for fancier airline bar
+
+" map leader h to prev buffer
+map <Leader>h :bprev<cr>
+
+" map leader l to next buffer
+map <Leader>l :bnext<cr>
+
+
+" NERDTress File highlighting
+function! NERDTreeHighlightFile(extension, fg, bg, guifg, guibg)
+  exec 'autocmd filetype nerdtree highlight ' . a:extension .' ctermbg='. a:bg .' ctermfg='. a:fg .' guibg='. a:guibg .' guifg='. a:guifg
+  exec 'autocmd filetype nerdtree syn match ' . a:extension .' #^\s\+.*'. a:extension .'$#'
+endfunction
+
+call NERDTreeHighlightFile('md', 'blue', 'none', '#3366FF', '#151515')
+call NERDTreeHighlightFile('yml', 'yellow', 'none', 'yellow', '#151515')
+call NERDTreeHighlightFile('config', 'yellow', 'none', 'yellow', '#151515')
+call NERDTreeHighlightFile('conf', 'yellow', 'none', 'yellow', '#151515')
+call NERDTreeHighlightFile('json', 'yellow', 'none', 'yellow', '#151515')
+call NERDTreeHighlightFile('html', 'yellow', 'none', 'yellow', '#151515')
+call NERDTreeHighlightFile('styl', 'cyan', 'none', 'cyan', '#151515')
+call NERDTreeHighlightFile('css', 'cyan', 'none', 'cyan', '#151515')
+call NERDTreeHighlightFile('coffee', 'Red', 'none', 'red', '#151515')
+call NERDTreeHighlightFile('js', 'Red', 'none', '#ffa500', '#151515')
+
+
+" The Silver Searcher
+if executable('ag')
+  " Use ag over grep
+  set grepprg=ag\ --nogroup
+  command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
+
+endif
+
+" skip quickfix buffer when nvigating through buffers
+augroup qf
+  autocmd!
+  autocmd FileType qf set nobuflisted
+augroup END
 
 " options for tagbar plugin
 let g:tagbar_type_ruby = {
