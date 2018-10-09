@@ -33,6 +33,7 @@ Plugin 'chr4/nginx.vim'
 Plugin 'junegunn/fzf.vim'
 Plugin 'rhysd/vim-crystal'
 Plugin 'posva/vim-vue'
+Plugin 'joker1007/vim-ruby-heredoc-syntax'
 Plugin 'christoomey/vim-system-copy'
 Plugin 'farmergreg/vim-lastplace'
 Plugin 'ngmy/vim-rubocop'
@@ -152,6 +153,10 @@ nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-h> <C-w>h
 nnoremap <C-l> <C-w>l
+
+" press return to temporarily get out of the highlighted search
+nnoremap <C-n> :nohlsearch<CR><CR>
+set hlsearch
 
 " Don't use Ex mode, use Q for formatting
 map Q gq
@@ -301,3 +306,9 @@ let g:ale_set_highlights = 0 " disable highlighting
 let g:ale_sign_column_always = 1
 highlight clear ALEErrorSign
 highlight clear ALEWarningSign
+
+let g:ruby_heredoc_syntax_filetypes = {
+        \ "xml" : {
+        \   "start" : "XML",
+        \},
+  \}
