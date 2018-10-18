@@ -272,6 +272,11 @@ call NERDTreeHighlightFile('coffee', 'Red', 'none', 'red', '#151515')
 call NERDTreeHighlightFile('js', 'Red', 'none', '#ffa500', '#151515')
 
 
+" Change hash rockets (:x => a) to new Ruby syntax (x: a)
+function! RocketFix()
+  %s/:\([^=,'"]*\) =>/\1:/gc
+endfunction
+
 " The Silver Searcher
 if executable('ag')
   " Use ag over grep
