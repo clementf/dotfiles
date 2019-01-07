@@ -68,7 +68,11 @@ if has("vms")
 else
   set backup " keep a backup file (restore to previous version)
   set undofile " keep an undo file (undo changes after closing)
+  set directory=~/.vim/tmp
+  set backupdir=~/.vim/tmp
+  set undodir=~/.vim/tmp
 endif
+
 set history=100 " keep 100 lines of command line history
 set ruler " show the cursor position all the time
 set showcmd " display incomplete commands
