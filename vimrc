@@ -41,6 +41,7 @@ Plugin 'int3/vim-extradite'
 Plugin 'AndrewRadev/switch.vim'
 Plugin 'tpope/vim-unimpaired'
 Plugin 'vimwiki/vimwiki'
+Plugin 'ConradIrwin/vim-bracketed-paste'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
