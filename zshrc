@@ -47,6 +47,7 @@ alias v='env $(cat .env) vim .'
 alias rc="vim ~/.zshrc"
 alias j="z"
 alias dokcer="docker"
+alias dc="docker-compose"
 alias bert="bundle exec rake test"
 alias sp="bundle exec rspec"
 
