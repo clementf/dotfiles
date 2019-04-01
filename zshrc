@@ -74,11 +74,17 @@ alias tf="foreman run bundle exec rspec spec/features"
 alias tnf="foreman run bundle exec rspec  --exclude-pattern \"spec/features/**/*_spec.rb\""
 alias con="foreman run rails c"
 alias ml="cd ~/code/coursera/ml"
+function git_current_branch() {
+  git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
+}
 
 alias preco="sh .git/hooks/pre-commit"
 alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ print $9  $5 }' "
 alias churn="git log --all -M -C --name-only --format='format:' $@ | sort | grep -v '^$' | uniq -c | sort -n | awk 'BEGIN {print \"count\tfile\"} {print $1  $2}'"
 alias showrt="netstat -nr -f inet" # show routing tables
+
+alias t="tmux -u"
+alias tn="tmux -u new"
 
 # if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi # try rvm as this takes forever ?
 
