@@ -89,11 +89,12 @@ set numberwidth=3
 
 :au FocusLost * :set number
 :au FocusGained * :set relativenumber
+:colo dracula
 
 set encoding=utf8
 
 highlight ColorColumn ctermbg=235 guibg=#2c2d27
-set cc=80,128 " highlight colums for strict mode and critical length
+set cc=128 " highlight colums for strict mode and critical length
 
 " In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
@@ -171,7 +172,7 @@ map <Leader>T :Dispatch ruby %<CR>
 " RSpec.vim mappings
 let g:rspec_command = ":Dispatch bundle exec rspec {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
-map <Leader>a :call RunAllSpecs()<CR>
+map <Leader>A :qa<CR>
 
 " use ,, to trigger emmet
 let g:user_emmet_leader_key=','
