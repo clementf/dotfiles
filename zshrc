@@ -96,6 +96,7 @@ alias tn="tmux -u new"
 
 # ignore files when searching using fzf
 export FZF_DEFAULT_COMMAND='ag --hidden --ignore .git -g ""'
+alias ag='ag --path-to-ignore ~/.ignore'
 alias F="fzf"
 
 export EDITOR=vim
