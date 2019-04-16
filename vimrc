@@ -284,6 +284,12 @@ function! RocketFix()
   %s/:\([^=,'"]*\) =>/\1:/gc
 endfunction
 
+" ignore whitespace by default when using vimdiff
+if &diff
+    " diff mode
+    set diffopt+=iwhite
+endif
+
 " The Silver Searcher
 if executable('ag')
   " Use ag over grep
