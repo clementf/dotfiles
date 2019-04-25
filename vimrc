@@ -43,6 +43,7 @@ Plugin 'tpope/vim-unimpaired'
 Plugin 'vimwiki/vimwiki'
 Plugin 'ConradIrwin/vim-bracketed-paste'
 Plugin 'chrisbra/csv.vim'
+Plugin 'noprompt/vim-yardoc'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
