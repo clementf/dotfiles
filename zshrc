@@ -36,9 +36,10 @@ setopt auto_cd # If you type foo, and it isn't a command, and it is a directory 
 setopt append_history # Allow multiple terminal sessions to all append to one zsh command history
 setopt extended_history # save timestamp of command and duration
 setopt inc_append_history # Add comamnds as they are typed, don't wait until shell exit
-setopt hist_expire_dups_first # when trimming history, lose oldest duplicates first
-setopt hist_ignore_dups # Do not write events to history that are duplicates of previous events
-setopt share_history # imports new commands and appends typed commands to history
+setopt HIST_EXPIRE_DUPS_FIRST # when trimming history, lose oldest duplicates first
+setopt HIST_IGNORE_DUPS # Do not write events to history that are duplicates of previous events
+setopt HIST_REDUCE_BLANKS HIST_SAVE_NO_DUPS HIST_FIND_NO_DUPS
+setopt SHARE_HISTORY # imports new commands and appends typed commands to history
 
 
 alias vs="open -a /Applications/Visual\ Studio\ Code.app"
