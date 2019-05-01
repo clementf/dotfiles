@@ -51,6 +51,7 @@ alias dokcer="docker"
 alias dc="docker-compose"
 alias bert="bundle exec rake test"
 alias sp="bundle exec rspec"
+alias be="bundle exec"
 
 # global
 alias c="cd ~/code"
