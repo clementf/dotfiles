@@ -107,3 +107,4 @@ alias ag='ag --path-to-ignore ~/.ignore'
 alias F="fzf"
 
 export EDITOR=vim
+export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
