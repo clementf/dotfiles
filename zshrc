@@ -2,6 +2,11 @@ PATH=/usr/local/share/python:$PATH
 PATH=$PATH:/usr/local/sbin
 export PATH="$HOME/.rbenv/bin:$PATH"
 
+# node / yarn / n config
+export PATH="$HOME/.npm/bin:$PATH"
+export N_PREFIX=$HOME/.n
+export PATH="$PATH:$N_PREFIX/bin"
+
 export HISTFILE=~/.zsh_history
 export HISTSIZE=20000
 export SAVEHIST=20000
