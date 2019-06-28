@@ -48,6 +48,7 @@ setopt SHARE_HISTORY # imports new commands and appends typed commands to histor
 
 
 alias vs="open -a /Applications/Visual\ Studio\ Code.app"
+alias ze="open -a /Applications/Zettlr.app"
 alias vimrc="vim ~/.vimrc"
 alias v='env $(cat .env) vim .'
 alias rc="vim ~/.zshrc"
