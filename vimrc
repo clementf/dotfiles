@@ -44,6 +44,7 @@ Plugin 'vimwiki/vimwiki'
 Plugin 'ConradIrwin/vim-bracketed-paste'
 Plugin 'chrisbra/csv.vim'
 Plugin 'noprompt/vim-yardoc'
+Plugin 'christoomey/vim-tmux-navigator'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -155,12 +156,6 @@ smap <C-J> <Plug>snipMateNextOrTrigger
 
 " Switch between the last two files
 nnoremap <leader><leader> <c-^>
-
-" Quicker window movement
-nnoremap <C-j> <C-w>j
-nnoremap <C-k> <C-w>k
-nnoremap <C-h> <C-w>h
-nnoremap <C-l> <C-w>l
 
 " press return to temporarily get out of the highlighted search
 nnoremap <C-n> :nohlsearch<CR><CR>
