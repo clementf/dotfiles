@@ -94,6 +94,8 @@ alias showrt="netstat -nr -f inet" # show routing tables
 alias t="tmux -u"
 alias tn="tmux -u new"
 
+alias ww="watson"
+
 # if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi # try rvm as this takes forever ?
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
