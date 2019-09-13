@@ -91,6 +91,8 @@ alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ p
 alias churn="git log --all -M -C --name-only --format='format:' $@ | sort | grep -v '^$' | uniq -c | sort -n | awk 'BEGIN {print \"count\tfile\"} {print $1  $2}'"
 alias showrt="netstat -nr -f inet" # show routing tables
 
+alias ss="open -a /Applications/Sublime\ Text.app"
+
 alias t="tmux -u"
 alias tn="tmux -u new"
 
