@@ -33,8 +33,6 @@ fi
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
 
-
-
 setopt auto_cd # If you type foo, and it isn't a command, and it is a directory in your cdpath, go there
 
 # ===== History
@@ -46,9 +44,9 @@ setopt HIST_IGNORE_DUPS # Do not write events to history that are duplicates of 
 setopt HIST_REDUCE_BLANKS HIST_SAVE_NO_DUPS HIST_FIND_NO_DUPS
 setopt SHARE_HISTORY # imports new commands and appends typed commands to history
 
-
 alias vs="open -a /Applications/Visual\ Studio\ Code.app"
 alias ze="open -a /Applications/Zettlr.app"
+alias ss="open -a /Applications/Sublime\ Text.app"
 alias vimrc="vim ~/.vimrc"
 alias v='env $(cat .env) vim .'
 alias rc="vim ~/.zshrc"
@@ -63,13 +61,6 @@ alias be="bundle exec"
 alias c="cd ~/code"
 alias dot="cd ~/code/dotfiles"
 
-#specific
-alias 5dp="cd ~/5miles/data_processor"
-alias 5="cd ~/5miles/app"
-alias 5c="cd ~/5miles/corporate-website-5miles"
-alias 5mm="5miles morning"
-alias p2s="5miles prod2stag"
-
 # fuga
 source ~/.fugarc
 
@@ -81,7 +72,7 @@ alias ta="foreman run bundle exec rspec"
 alias tf="foreman run bundle exec rspec spec/features"
 alias tnf="foreman run bundle exec rspec  --exclude-pattern \"spec/features/**/*_spec.rb\""
 alias con="foreman run rails c"
-alias ml="cd ~/code/coursera/ml"
+
 function git_current_branch() {
   git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
 }
@@ -91,21 +82,12 @@ alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ p
 alias churn="git log --all -M -C --name-only --format='format:' $@ | sort | grep -v '^$' | uniq -c | sort -n | awk 'BEGIN {print \"count\tfile\"} {print $1  $2}'"
 alias showrt="netstat -nr -f inet" # show routing tables
 
-alias ss="open -a /Applications/Sublime\ Text.app"
-
 alias t="tmux -u"
 alias tn="tmux -u new"
 
 alias ww="watson"
 
-# if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi # try rvm as this takes forever ?
-
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-# if command -v pyenv 1>/dev/null 2>&1; then
-#   eval "$(pyenv init -)"
-# fi
-
 # ignore files when searching using fzf
 export FZF_DEFAULT_COMMAND='ag --hidden --ignore .git -g ""'
 alias ag='ag --path-to-ignore ~/.ignore'
