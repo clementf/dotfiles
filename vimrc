@@ -45,6 +45,7 @@ Plugin 'ConradIrwin/vim-bracketed-paste'
 Plugin 'chrisbra/csv.vim'
 Plugin 'noprompt/vim-yardoc'
 Plugin 'christoomey/vim-tmux-navigator'
+Plugin 'jiangmiao/auto-pairs'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
