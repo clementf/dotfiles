@@ -46,6 +46,8 @@ Plugin 'chrisbra/csv.vim'
 Plugin 'noprompt/vim-yardoc'
 Plugin 'christoomey/vim-tmux-navigator'
 Plugin 'jiangmiao/auto-pairs'
+Plugin 'leafgarland/typescript-vim'
+Plugin 'martinda/Jenkinsfile-vim-syntax'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -320,6 +322,7 @@ let g:ale_linters = {
 let g:ale_fixers = {
       \   'javascript': ['prettier'],
       \   'css': ['prettier'],
+      \   'ruby': ['standardrb'],
       \}
 
 let g:ale_fix_on_save = 1
