@@ -64,6 +64,8 @@ alias dot="cd ~/code/dotfiles"
 # fuga
 source ~/.fugarc
 
+# last commit
+alias lc="git log --format=oneline --abbrev-commit | head -n 1 | cut -d ' ' -f1"
 alias grh="git reset --hard"
 alias so="source ~/.zshrc"
 alias gb="git checkout -b"
@@ -86,6 +88,7 @@ alias t="tmux -u"
 alias tn="tmux -u new"
 
 alias ww="watson"
+alias of="onefetch"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 # ignore files when searching using fzf
@@ -96,3 +99,11 @@ alias F="fzf"
 export EDITOR=vim
 export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
 export LESSCHARSET=UTF-8
+
+export PATH="$HOME/.crenv/bin:$PATH"
+eval "$(crenv init -)"
+
+# needed for lucky framework
+export PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig
+
+export LC_ALL=en_US.UTF-8
