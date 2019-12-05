@@ -12,3 +12,4 @@
   end
 end
 
+AwesomePrint.pry! if defined? AwesomePrint
