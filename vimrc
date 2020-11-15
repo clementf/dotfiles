@@ -172,7 +172,7 @@ set hlsearch
 
 " Don't use Ex mode, use Q for formatting
 map Q gq
-map <Leader>T :Dispatch ruby %<CR>
+map <Leader>T :Dispatch bundle exec ruby %<CR>
 
 " RSpec.vim mappings
 let g:rspec_command = ":Dispatch bundle exec rspec {spec}"
