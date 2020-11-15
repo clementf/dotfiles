@@ -97,6 +97,7 @@ alias ag='ag --path-to-ignore ~/.ignore'
 alias F="fzf"
 
 export EDITOR=vim
+export WATSON_DIR=~/.watson
 export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
 export LESSCHARSET=UTF-8
 
@@ -107,3 +108,6 @@ eval "$(crenv init -)"
 export PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig
 
 export LC_ALL=en_US.UTF-8
+eval "$(rbenv init -)"
+export ERL_AFLAGS="-kernel shell_history enabled"
+export GOOGLE_APPLICATION_CREDENTIALS=~/.google_cloud_keyfile.json
