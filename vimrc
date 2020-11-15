@@ -41,6 +41,12 @@ Plugin 'int3/vim-extradite'
 Plugin 'AndrewRadev/switch.vim'
 Plugin 'tpope/vim-unimpaired'
 Plugin 'vimwiki/vimwiki'
+Plugin 'elixir-editors/vim-elixir'
+Plugin 'elmcast/elm-vim'
+
+let g:vimwiki_list = [{'path': '~/Dropbox/vimwiki/',
+                      \ 'syntax': 'markdown', 'ext': '.md'}]
+
 Plugin 'ConradIrwin/vim-bracketed-paste'
 Plugin 'chrisbra/csv.vim'
 Plugin 'noprompt/vim-yardoc'
