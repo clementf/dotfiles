@@ -2,6 +2,10 @@ PATH=/usr/local/share/python:$PATH
 PATH=$PATH:/usr/local/sbin
 export PATH="$HOME/.rbenv/bin:$PATH"
 
+export NVM_DIR="$HOME/.nvm"
+[ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && . "/usr/local/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
 # node / yarn / n config
 export PATH="$HOME/.npm/bin:$PATH"
 export N_PREFIX=$HOME/.n
