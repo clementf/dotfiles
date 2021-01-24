@@ -246,7 +246,7 @@ let g:gitgutter_diff_args = '-w'
 
 " mapping to tig (integrates git in vim)
 map <Leader>g1 :Commits<CR>
-map <Leader>g2 :!tig status<CR><CR>
+map <Leader>g2 :Gstatus<CR>
 map <Leader>g3 :!git diff -w<CR>
 map <Leader>g4 :!git add .<CR><CR>
 map <Leader>g5 :!git commit<CR>
