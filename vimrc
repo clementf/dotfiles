@@ -14,7 +14,38 @@ call vundle#begin()
 
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
-Plugin 'bling/vim-airline'
+" Plugin 'bling/vim-airline'
+Plugin 'itchyny/lightline.vim'
+Plugin 'mengelbrecht/lightline-bufferline'
+let g:lightline = {
+      \ 'colorscheme': 'one',
+      \ 'active': {
+      \   'left': [ [ 'mode', 'paste' ], [ 'gitbranch'], ['readonly', 'filename', 'modified' ] ],
+      \   'right': [[ 'lineinfo' ],[ 'percent' ] ]
+      \ },
+      \ 'tabline': {
+      \   'left': [ ['buffers'] ],
+      \   'right': [ ],
+      \ },
+      \ 'component_expand': {
+      \   'buffers': 'lightline#bufferline#buffers'
+      \ },
+      \ 'component_function': {
+      \   'gitbranch': 'FugitiveHead'
+      \ },
+      \ 'component_type': {
+      \   'buffers': 'tabsel'
+      \ },
+      \ 'separator': { 'left': "\ue0b0", 'right': "\ue0b2" },
+      \ 'subseparator': { 'left': "\ue0b1", 'right': "\ue0b3" },
+      \ }
+
+set showtabline=2
+let g:lightline.colorscheme = 'darcula'
+let g:lightline#bufferline#show_number = 1
+
+" let g:lightline#bufferline#auto_hide = 1000
+
 Plugin 'mattn/emmet-vim'
 Plugin 'tpope/vim-commentary'
 Plugin 'tpope/vim-endwise'
@@ -43,9 +74,30 @@ Plugin 'tpope/vim-unimpaired'
 Plugin 'vimwiki/vimwiki'
 Plugin 'elixir-editors/vim-elixir'
 Plugin 'elmcast/elm-vim'
+Plugin 'evanleck/vim-svelte'
+Plugin 'mbbill/undotree'
+
+Plugin 'neoclide/coc.nvim'
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
 
 let g:vimwiki_list = [{'path': '~/Dropbox/vimwiki/',
                       \ 'syntax': 'markdown', 'ext': '.md'}]
+
+" Always show the signcolumn, otherwise it would shift the text each time
+" diagnostics appear/become resolved.
+set signcolumn=number
+" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
+" delays and poor user experience.
+set updatetime=300
 
 Plugin 'ConradIrwin/vim-bracketed-paste'
 Plugin 'chrisbra/csv.vim'
@@ -140,6 +192,8 @@ set expandtab
 set ttyfast
 set lazyredraw  " prevent redraws while executing
 
+set hidden " no need to save before changing buffer
+
 " Display extra whitespace
 set list listchars=tab:»·,trail:·,nbsp:·
 
@@ -149,17 +203,6 @@ set nojoinspaces
 " Tab completion
 set wildmode=list:longest,list:full
 
-function! InsertTabWrapper()
-  let col = col('.') - 1
-  if !col || getline('.')[col - 1] !~ '\k'
-    return "\<tab>"
-  else
-    return "\<c-p>"
-  endif
-endfunction
-
-inoremap <Tab> <c-r>=InsertTabWrapper()<cr>
-inoremap <S-Tab> <c-n>
 imap <C-J> <Plug>snipMateNextOrTrigger
 smap <C-J> <Plug>snipMateNextOrTrigger
 
@@ -220,15 +263,16 @@ let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#buffer_idx_mode = 1
 
 " fast navigation between buffers
-nmap <leader>1 <Plug>AirlineSelectTab1
-nmap <leader>2 <Plug>AirlineSelectTab2
-nmap <leader>3 <Plug>AirlineSelectTab3
-nmap <leader>4 <Plug>AirlineSelectTab4
-nmap <leader>5 <Plug>AirlineSelectTab5
-nmap <leader>6 <Plug>AirlineSelectTab6
-nmap <leader>7 <Plug>AirlineSelectTab7
-nmap <leader>8 <Plug>AirlineSelectTab8
-nmap <leader>9 <Plug>AirlineSelectTab9
+nmap <Leader>1 <Plug>lightline#bufferline#go(1)
+nmap <Leader>2 <Plug>lightline#bufferline#go(2)
+nmap <Leader>3 <Plug>lightline#bufferline#go(3)
+nmap <Leader>4 <Plug>lightline#bufferline#go(4)
+nmap <Leader>5 <Plug>lightline#bufferline#go(5)
+nmap <Leader>6 <Plug>lightline#bufferline#go(6)
+nmap <Leader>7 <Plug>lightline#bufferline#go(7)
+nmap <Leader>8 <Plug>lightline#bufferline#go(8)
+nmap <Leader>9 <Plug>lightline#bufferline#go(9)
+nmap <Leader>0 <Plug>lightline#bufferline#go(10)
 
 map <Leader>m :Emodel<cr>
 map <Leader>c :Econtroller<cr>
@@ -302,12 +346,6 @@ if executable('ag')
   command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
 
 endif
-
-" skip quickfix buffer when nvigating through buffers
-augroup qf
-  autocmd!
-  autocmd FileType qf set nobuflisted
-augroup END
 
 " options for tagbar plugin
 let g:tagbar_type_ruby = {
