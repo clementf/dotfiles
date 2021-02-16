@@ -14,38 +14,9 @@ call vundle#begin()
 
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
-" Plugin 'bling/vim-airline'
+
 Plugin 'itchyny/lightline.vim'
 Plugin 'mengelbrecht/lightline-bufferline'
-let g:lightline = {
-      \ 'colorscheme': 'one',
-      \ 'active': {
-      \   'left': [ [ 'mode', 'paste' ], [ 'gitbranch'], ['readonly', 'filename', 'modified' ] ],
-      \   'right': [[ 'lineinfo' ],[ 'percent' ] ]
-      \ },
-      \ 'tabline': {
-      \   'left': [ ['buffers'] ],
-      \   'right': [ ],
-      \ },
-      \ 'component_expand': {
-      \   'buffers': 'lightline#bufferline#buffers'
-      \ },
-      \ 'component_function': {
-      \   'gitbranch': 'FugitiveHead'
-      \ },
-      \ 'component_type': {
-      \   'buffers': 'tabsel'
-      \ },
-      \ 'separator': { 'left': "\ue0b0", 'right': "\ue0b2" },
-      \ 'subseparator': { 'left': "\ue0b1", 'right': "\ue0b3" },
-      \ }
-
-set showtabline=2
-let g:lightline.colorscheme = 'darcula'
-let g:lightline#bufferline#show_number = 1
-
-" let g:lightline#bufferline#auto_hide = 1000
-
 Plugin 'mattn/emmet-vim'
 Plugin 'tpope/vim-commentary'
 Plugin 'tpope/vim-endwise'
@@ -76,28 +47,10 @@ Plugin 'elixir-editors/vim-elixir'
 Plugin 'elmcast/elm-vim'
 Plugin 'evanleck/vim-svelte'
 Plugin 'mbbill/undotree'
+Plugin 'arcticicestudio/nord-vim'
+Plugin 'jacoborus/tender.vim'
 
 Plugin 'neoclide/coc.nvim'
-inoremap <silent><expr> <TAB>
-      \ pumvisible() ? "\<C-n>" :
-      \ <SID>check_back_space() ? "\<TAB>" :
-      \ coc#refresh()
-inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
-
-function! s:check_back_space() abort
-  let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =~# '\s'
-endfunction
-
-let g:vimwiki_list = [{'path': '~/Dropbox/vimwiki/',
-                      \ 'syntax': 'markdown', 'ext': '.md'}]
-
-" Always show the signcolumn, otherwise it would shift the text each time
-" diagnostics appear/become resolved.
-set signcolumn=number
-" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
-" delays and poor user experience.
-set updatetime=300
 
 Plugin 'ConradIrwin/vim-bracketed-paste'
 Plugin 'chrisbra/csv.vim'
@@ -143,21 +96,15 @@ set showcmd " display incomplete commands
 set incsearch " do incremental searching
 set regexpengine=1 " avoid slow scrolling issue with vim ruby (https://github.com/vim-ruby/vim-ruby/issues/243)
 
-" Line Numbers
-" With relativenumber and number set, shows relative number but has current
-" number on current line.
+" Line Numbers with relativenumber and number set, shows relative number but has current number on current line.
 set relativenumber
 set number
 set numberwidth=3
-
 :au FocusLost * :set number
 :au FocusGained * :set relativenumber
-:colo dracula
 
+:colo tender
 set encoding=utf8
-
-highlight ColorColumn ctermbg=235 guibg=#2c2d27
-set cc=128 " highlight colums for strict mode and critical length
 
 " In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
@@ -217,10 +164,12 @@ set hlsearch
 map Q gq
 map <Leader>T :Dispatch bundle exec ruby %<CR>
 
+let g:vimwiki_list = [{'path': '~/Dropbox/vimwiki/',
+                      \ 'syntax': 'markdown', 'ext': '.md'}]
+
 " RSpec.vim mappings
 let g:rspec_command = ":Dispatch bundle exec rspec {spec}"
 map <Leader>t :call RunCurrentSpecFile()<CR>
-map <Leader>A :qa<CR>
 
 " use ,, to trigger emmet
 let g:user_emmet_leader_key=','
@@ -233,7 +182,7 @@ autocmd BufWritePre * %s/\s\+$//e
 noremap <leader>q :q<cr>
 nnoremap <leader>s :w<cr>
 
-" align  current paragraph mapped to leader a
+" align  current paragraph mapped to leader i
 noremap <leader>i =ip
 " map leader p to fzt fuzzy search
 map <leader>p :Files<CR>
@@ -252,15 +201,52 @@ map <leader>F :Ag<SPACE>
 nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 nnoremap <leader>K :call fzf#vim#tags(expand('<cword>'))<CR>
 
+" Coc autocomplete
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+
 " remap Wq to wq (making the typo so often)
 command! Wq wq
 
 map <Leader>r :RuboCop<cr>
 map <Leader>ra :RuboCop -a<cr>
 
-" display all buffers
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#buffer_idx_mode = 1
+" status and tab line
+let g:lightline = {
+      \ 'colorscheme': 'one',
+      \ 'active': {
+      \   'left': [ [ 'mode', 'paste' ], [ 'gitbranch'], ['readonly', 'filename', 'modified' ] ],
+      \   'right': [[ 'lineinfo' ],[ 'percent' ] ]
+      \ },
+      \ 'tabline': {
+      \   'left': [ ['buffers'] ],
+      \   'right': [ ],
+      \ },
+      \ 'component_expand': {
+      \   'buffers': 'lightline#bufferline#buffers'
+      \ },
+      \ 'component_function': {
+      \   'gitbranch': 'FugitiveHead'
+      \ },
+      \ 'component_type': {
+      \   'buffers': 'tabsel'
+      \ },
+      \ 'separator': { 'left': "\ue0b0", 'right': "\ue0b2" },
+      \ 'subseparator': { 'left': "\ue0b1", 'right': "\ue0b3" },
+      \ }
+
+set showtabline=2
+let g:lightline.colorscheme = 'darcula'
+let g:lightline#bufferline#show_number = 2
 
 " fast navigation between buffers
 nmap <Leader>1 <Plug>lightline#bufferline#go(1)
@@ -282,6 +268,13 @@ map <Leader>v :Eview<cr>
 map <Leader>x :bd<cr>
 map <Leader>d :call delete(expand('%'))<cr>
 
+" Always show the signcolumn, otherwise it would shift the text each time
+" diagnostics appear/become resolved.
+set signcolumn=number
+" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
+" delays and poor user experience.
+set updatetime=300
+
 " dont use mappings form git gutter plugin
 let g:gitgutter_map_keys = 0
 
@@ -300,8 +293,6 @@ map <Leader>gb :Gblame<CR>
 map <Leader>X :%bd<CR>
 
 map <Leader>de o(require('pry'); binding.pry)<ESC>
-
-let g:airline_powerline_fonts = 1 "use powerline font symbols for fancier airline bar
 
 " map leader h to prev buffer
 map <Leader>h :bprev<cr>
@@ -367,6 +358,7 @@ let g:ale_fixers = {
       \   'javascript': ['prettier'],
       \   'css': ['prettier'],
       \}
+      " \   'ruby': ['standardrb'],
 
 let g:ale_fix_on_save = 1
 let g:ale_set_highlights = 0 " disable highlighting
