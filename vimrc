@@ -197,6 +197,8 @@ map <leader>B :TagbarToggle<CR>
 " map leader F to search
 map <leader>F :Ag<SPACE>
 
+map <leader>H :History<CR>
+
 " bind leader k to grep word under cursor
 nnoremap <leader>k :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 nnoremap <leader>K :call fzf#vim#tags(expand('<cword>'))<CR>
