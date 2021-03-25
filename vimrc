@@ -59,6 +59,7 @@ Plugin 'christoomey/vim-tmux-navigator'
 Plugin 'jiangmiao/auto-pairs'
 Plugin 'leafgarland/typescript-vim'
 Plugin 'martinda/Jenkinsfile-vim-syntax'
+Plugin 'qpkorr/vim-bufkill'
 
 " snippet mgmt
 Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -267,7 +268,7 @@ map <Leader>c :Econtroller<cr>
 map <Leader>u :Eunittest<cr>
 map <Leader>v :Eview<cr>
 
-map <Leader>x :bd<cr>
+map <Leader>x :BD<cr>
 map <Leader>d :call delete(expand('%'))<cr>
 
 " Always show the signcolumn, otherwise it would shift the text each time
