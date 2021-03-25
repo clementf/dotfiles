@@ -323,7 +323,7 @@ call NERDTreeHighlightFile('js', 'Red', 'none', '#ffa500', '#151515')
 
 " Change hash rockets (:x => a) to new Ruby syntax (x: a)
 function! RocketFix()
-  %s/:\([^=,'"]*\) =>/\1:/gc
+  %s/:\([^=,'"]*\) \?=> \?/\1: /gc
 endfunction
 
 " ignore whitespace by default when using vimdiff
