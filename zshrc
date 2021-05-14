@@ -11,12 +11,6 @@ export PATH="$HOME/.npm/bin:$PATH"
 export N_PREFIX=$HOME/.n
 export PATH="$PATH:$N_PREFIX/bin"
 
-export HISTFILE=~/.zsh_history
-export HISTSIZE=20000
-export SAVEHIST=20000
-setopt HIST_FIND_NO_DUPS
-setopt HIST_IGNORE_ALL_DUPS
-
 autoload -U compinit
 compinit
 
@@ -42,11 +36,15 @@ bindkey '^[[B' history-substring-search-down
 setopt auto_cd # If you type foo, and it isn't a command, and it is a directory in your cdpath, go there
 
 # ===== History
+export HISTFILE=~/.zsh_history
+export HISTSIZE=20000
+export SAVEHIST=20000
 setopt append_history # Allow multiple terminal sessions to all append to one zsh command history
 setopt extended_history # save timestamp of command and duration
 setopt inc_append_history # Add comamnds as they are typed, don't wait until shell exit
 setopt HIST_EXPIRE_DUPS_FIRST # when trimming history, lose oldest duplicates first
 setopt HIST_IGNORE_DUPS # Do not write events to history that are duplicates of previous events
+setopt HIST_FIND_NO_DUPS # Ignore dupes that may already be in history
 setopt HIST_REDUCE_BLANKS HIST_SAVE_NO_DUPS HIST_FIND_NO_DUPS
 setopt SHARE_HISTORY # imports new commands and appends typed commands to history
 
