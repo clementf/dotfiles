@@ -14,6 +14,8 @@ export PATH="$PATH:$N_PREFIX/bin"
 export HISTFILE=~/.zsh_history
 export HISTSIZE=20000
 export SAVEHIST=20000
+setopt HIST_FIND_NO_DUPS
+setopt HIST_IGNORE_ALL_DUPS
 
 autoload -U compinit
 compinit
