@@ -66,6 +66,7 @@ Plugin 'qpkorr/vim-bufkill'
 Plugin 'MarcWeber/vim-addon-mw-utils'
 Plugin 'tomtom/tlib_vim'
 Plugin 'garbas/vim-snipmate'
+let g:snipMate = { 'snippet_version' : 1 }
 
 " js plugins
 Plugin 'pangloss/vim-javascript'
