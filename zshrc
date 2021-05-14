@@ -60,9 +60,6 @@ alias be="bundle exec"
 alias c="cd ~/code"
 alias dot="cd ~/code/dotfiles"
 
-# fuga
-source ~/.fugarc
-
 # last commit
 alias lc="git log --format=oneline --abbrev-commit | head -n 1 | cut -d ' ' -f1"
 alias grh="git reset --hard"
@@ -94,20 +91,22 @@ alias of="onefetch"
 # ignore files when searching using fzf
 export FZF_DEFAULT_COMMAND='ag --hidden --ignore .git -g ""'
 alias ag='ag --path-to-ignore ~/.ignore'
-alias F="fzf"
 
 export EDITOR=vim
 export WATSON_DIR=~/Dropbox/.watson
 export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
 export LESSCHARSET=UTF-8
 
-export PATH="$HOME/.crenv/bin:$PATH"
-eval "$(crenv init -)"
-
-# needed for lucky framework
-export PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig
-
 export LC_ALL=en_US.UTF-8
 eval "$(rbenv init -)"
 export ERL_AFLAGS="-kernel shell_history enabled"
 export GOOGLE_APPLICATION_CREDENTIALS=~/.google_cloud_keyfile.json
+
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> /Users/clement/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+fpath+=$HOME/.zsh/pure
+autoload -U promptinit; promptinit
+prompt pure
+
+export PATH=/opt/homebrew/bin:$PATH
