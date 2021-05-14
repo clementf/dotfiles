@@ -6,11 +6,6 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"  # This loads nvm
 [ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && . "/usr/local/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
-# node / yarn / n config
-export PATH="$HOME/.npm/bin:$PATH"
-export N_PREFIX=$HOME/.n
-export PATH="$PATH:$N_PREFIX/bin"
-
 autoload -U compinit
 compinit
 
