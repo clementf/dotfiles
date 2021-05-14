@@ -104,7 +104,7 @@ alias ag='ag --path-to-ignore ~/.ignore'
 alias F="fzf"
 
 export EDITOR=vim
-export WATSON_DIR=~/.watson
+export WATSON_DIR=~/Dropbox/.watson
 export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
 export LESSCHARSET=UTF-8
 
