@@ -32,6 +32,7 @@ Plugin 'Xuyuanp/nerdtree-git-plugin'
 Plugin 'majutsushi/tagbar'
 Plugin 'w0rp/ale'
 Plugin 'chr4/nginx.vim'
+Plugin 'junegunn/fzf'
 Plugin 'junegunn/fzf.vim'
 Plugin 'rhysd/vim-crystal'
 Plugin 'posva/vim-vue'
@@ -79,7 +80,7 @@ filetype plugin indent on    " required
 set backspace=indent,eol,start
 
 " search using fzf
-set rtp+=/usr/local/opt/fzf
+set rtp+=/opt/homebrew/bin/fzf
 
 if has("vms")
   set nobackup " do not keep a backup file, use versions instead
