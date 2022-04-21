@@ -156,8 +156,14 @@ set wildmode=list:longest,list:full
 imap <C-J> <Plug>snipMateNextOrTrigger
 smap <C-J> <Plug>snipMateNextOrTrigger
 
+" Per-directory .vimrc files
+set exrc
+set secure
+
 " Switch between the last two files
 nnoremap <leader><leader> <c-^>
+
+nnoremap <leader>wo :e .work<cr>
 
 " press return to temporarily get out of the highlighted search
 nnoremap <C-n> :nohlsearch<CR><CR>
@@ -288,12 +294,12 @@ let g:gitgutter_diff_args = '-w'
 
 " mapping to tig (integrates git in vim)
 map <Leader>g1 :Commits<CR>
-map <Leader>g2 :Gstatus<CR>
+map <Leader>g2 :Git<CR>
 map <Leader>g3 :!git diff -w<CR>
 map <Leader>g4 :!git add .<CR><CR>
 map <Leader>g5 :!git commit<CR>
 map <Leader>g6 :Extradite<CR>
-map <Leader>gb :Gblame<CR>
+map <Leader>gb :Git blame<CR>
 
 map <Leader>X :%bd<CR>
 
@@ -355,17 +361,15 @@ let g:tagbar_type_ruby = {
       \ ]
       \ }
 
-let g:ale_linters = {
-      \'ruby': ['rubocop', 'reek'],
-      \}
+let g:ale_linters = { 'ruby': ['standardrb', 'reek']}
 
 let g:ale_fixers = {
       \   'javascript': ['prettier'],
       \   'css': ['prettier'],
+      \   'ruby': ['standardrb'],
       \}
-      " \   'ruby': ['standardrb'],
 
-let g:ale_fix_on_save = 1
+let g:ale_fix_on_save = 0
 let g:ale_set_highlights = 0 " disable highlighting
 let g:ale_sign_column_always = 1
 highlight clear ALEErrorSign
