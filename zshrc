@@ -110,3 +110,20 @@ autoload -U promptinit; promptinit
 prompt pure
 
 export PATH=/opt/homebrew/bin:$PATH
+alias ibrew='arch -x86_64 /usr/local/bin/brew'
+
+export LDFLAGS="-L/opt/homebrew/opt/libffi/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/libffi/include"
+export PKG_CONFIG_PATH="/opt/homebrew/opt/libffi/lib/pkgconfig"
+
+# avoid errors to objc[51435]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called.
+# as seen here https://hynek.me/til/rq-macos/
+# this happens only when running libvips from ruby
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+
+# as per docker-sync install
+# https://docker-sync.readthedocs.io/en/latest/getting-started/installation.html#installation-osx
+if which ruby >/dev/null && which gem >/dev/null; then
+  PATH="$(ruby -r rubygems -e 'puts Gem.user_dir')/bin:$PATH"
+fi
+
