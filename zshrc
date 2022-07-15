@@ -103,7 +103,6 @@ eval "$(rbenv init -)"
 export ERL_AFLAGS="-kernel shell_history enabled"
 export GOOGLE_APPLICATION_CREDENTIALS=~/.google_cloud_keyfile.json
 
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> /Users/clement/.zprofile
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
 fpath+=$HOME/.zsh/pure
