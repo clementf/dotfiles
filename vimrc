@@ -50,6 +50,9 @@ Plugin 'evanleck/vim-svelte'
 Plugin 'mbbill/undotree'
 Plugin 'arcticicestudio/nord-vim'
 Plugin 'jacoborus/tender.vim'
+Plugin 'jkramer/vim-checkbox'
+
+Plugin 'mg979/vim-visual-multi', {'branch': 'master'}
 
 Plugin 'neoclide/coc.nvim'
 
@@ -165,9 +168,16 @@ nnoremap <leader><leader> <c-^>
 
 nnoremap <leader>wo :e .work<cr>
 
+map <silent> <leader>ch :call checkbox#ToggleCB()<cr>
+
 " press return to temporarily get out of the highlighted search
 nnoremap <C-n> :nohlsearch<CR><CR>
 set hlsearch
+
+" use C-y for vim multi cursor
+let g:VM_maps = {}
+let g:VM_maps['Find Under']         = '<C-y>' " replace C-n
+let g:VM_maps['Find Subword Under'] = '<C-y>' " replace C-n
 
 " Don't use Ex mode, use Q for formatting
 map Q gq
@@ -192,7 +202,6 @@ noremap <leader>q :q<cr>
 nnoremap <leader>s :w<cr>
 
 " align  current paragraph mapped to leader i
-noremap <leader>i =ip
 " map leader p to fzt fuzzy search
 map <leader>p :Files<CR>
 " map leader f to  search in buffer
