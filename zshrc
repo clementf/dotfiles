@@ -1,6 +1,7 @@
 PATH=/usr/local/share/python:$PATH
 PATH=$PATH:/usr/local/sbin
 export PATH="$HOME/.rbenv/bin:$PATH"
+export PATH="$HOME/.npm/lib/node_modules:$PATH"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"  # This loads nvm
