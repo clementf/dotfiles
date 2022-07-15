@@ -378,7 +378,7 @@ let g:ale_fixers = {
       \   'ruby': ['standardrb'],
       \}
 
-let g:ale_fix_on_save = 0
+let g:ale_fix_on_save = 1
 let g:ale_set_highlights = 0 " disable highlighting
 let g:ale_sign_column_always = 1
 highlight clear ALEErrorSign
