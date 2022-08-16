@@ -106,6 +106,11 @@ set regexpengine=1 " avoid slow scrolling issue with vim ruby (https://github.co
 set relativenumber
 set number
 set numberwidth=3
+
+" from https://vimtricks.com/p/vim-search-ignore-case/
+set ignorecase " Makes pattern matching case-insensitive
+set smartcase " Overrides ignorecase if your pattern contains mixed case
+
 :au FocusLost * :set number
 :au FocusGained * :set relativenumber
 
