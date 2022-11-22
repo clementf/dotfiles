@@ -45,8 +45,6 @@ setopt HIST_REDUCE_BLANKS HIST_SAVE_NO_DUPS HIST_FIND_NO_DUPS
 setopt SHARE_HISTORY # imports new commands and appends typed commands to history
 
 alias vs="open -a /Applications/Visual\ Studio\ Code.app"
-alias ze="open -a /Applications/Zettlr.app"
-alias ss="open -a /Applications/Sublime\ Text.app"
 alias vimrc="vim ~/.vimrc"
 alias v='env $(cat .env) vim .'
 alias rc="vim ~/.zshrc"
@@ -65,19 +63,12 @@ alias dot="cd ~/code/dotfiles"
 alias lc="git log --format=oneline --abbrev-commit | head -n 1 | cut -d ' ' -f1"
 alias grh="git reset --hard"
 alias so="source ~/.zshrc"
-alias gb="git checkout -b"
 alias gwip="git commit --m \"WIP\""
-alias fs="foreman s"
-alias ta="foreman run bundle exec rspec"
-alias tf="foreman run bundle exec rspec spec/features"
-alias tnf="foreman run bundle exec rspec  --exclude-pattern \"spec/features/**/*_spec.rb\""
-alias con="foreman run rails c"
 
 function git_current_branch() {
   git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
 }
 
-alias preco="sh .git/hooks/pre-commit"
 alias bigfiles="sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ print $9  $5 }' "
 alias churn="git log --all -M -C --name-only --format='format:' $@ | sort | grep -v '^$' | uniq -c | sort -n | awk 'BEGIN {print \"count\tfile\"} {print $1  $2}'"
 alias showrt="netstat -nr -f inet" # show routing tables
@@ -86,7 +77,6 @@ alias t="tmux -u"
 alias tn="tmux -u new"
 
 alias ww="watson"
-alias of="onefetch"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 # ignore files when searching using fzf
@@ -120,9 +110,3 @@ export PKG_CONFIG_PATH="/opt/homebrew/opt/libffi/lib/pkgconfig"
 # as seen here https://hynek.me/til/rq-macos/
 # this happens only when running libvips from ruby
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-
-# as per docker-sync install
-# https://docker-sync.readthedocs.io/en/latest/getting-started/installation.html#installation-osx
-if which ruby >/dev/null && which gem >/dev/null; then
-  PATH="$(ruby -r rubygems -e 'puts Gem.user_dir')/bin:$PATH"
-fi
