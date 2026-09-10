@@ -1,0 +1,365 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generates a self-contained HTML report of git activity per week, per author.
+#
+#   git_stats                       # this repo, last 365 days -> <repo>/tmp/git_stats.html
+#   git_stats ~/code/other-repo     # another repo (any path inside it)
+#   git_stats --days 180
+#   git_stats --output /tmp/x.html
+#   git_stats --open                # open the report when done
+#
+# Assumes a Rails-ish layout: specs live in spec/ (RSpec) and tmp/ exists for
+# throwaway output. Line counts are split into three buckets so "real code"
+# can be told apart from specs and prose:
+#   code  - everything that isn't a spec or a markdown file
+#   spec  - spec/** and *_spec.rb / *_test.rb
+#   docs  - *.md / *.mdc / *.markdown (docs, changelogs, CLAUDE.md, ...)
+
+require "json"
+require "date"
+require "time"
+require "fileutils"
+
+def flag_value(name)
+  i = ARGV.index(name)
+  i && ARGV[i + 1]
+end
+
+FLAGS_WITH_VALUES = %w[--days --output].freeze
+positional = ARGV.each_with_index.reject { |a, i|
+  a.start_with?("--") || (i > 0 && FLAGS_WITH_VALUES.include?(ARGV[i - 1]))
+}.map(&:first)
+
+DAYS = flag_value("--days")&.to_i || 365
+OPEN_AFTER = ARGV.include?("--open")
+
+# Work from the top of whatever repo the given path (or the cwd) lives in.
+start_dir = File.expand_path(positional.first || Dir.pwd)
+abort "Not a directory: #{start_dir}" unless File.directory?(start_dir)
+REPO = IO.popen(["git", "-C", start_dir, "rev-parse", "--show-toplevel"], err: File::NULL, &:read).strip
+abort "Not inside a git repository: #{start_dir}" if REPO.empty?
+Dir.chdir(REPO)
+
+OUTPUT = File.expand_path(flag_value("--output") || File.join(REPO, "tmp", "git_stats.html"))
+FileUtils.mkdir_p(File.dirname(OUTPUT))
+
+def bucket_for(path)
+  return :docs if /\.(md|mdc|markdown)\z/i.match?(path)
+  return :spec if path.start_with?("spec/", "test/") || path =~ /_(spec|test)\.rb\z/
+  :code
+end
+
+def week_of(date)
+  (date - ((date.wday + 6) % 7)).to_s # Monday of that week
+end
+
+SEP1 = "\x01"
+SEP2 = "\x02"
+
+log = IO.popen(
+  ["git", "log", "--no-merges", "--since=#{DAYS} days ago", "--numstat",
+    "--pretty=format:#{SEP1}%H#{SEP2}%aI#{SEP2}%aN#{SEP2}%aE"],
+  &:read
+)
+
+# Authors are keyed by email so the same person committing under different
+# spellings of their name (accents, machines) stays one row.
+authors = Hash.new { |h, k| h[k] = {names: Hash.new(0), emails: [k], weeks: Hash.new { |w, d| w[d] = new_week }} }
+
+def new_week
+  {commits: 0,
+   code_commits: 0, spec_commits: 0, docs_commits: 0,
+   code_add: 0, code_del: 0, spec_add: 0, spec_del: 0, docs_add: 0, docs_del: 0}
+end
+
+current = nil
+touched = nil
+log.each_line do |line|
+  line = line.chomp
+  next if line.empty?
+
+  if line.start_with?(SEP1)
+    _sha, iso, name, email = line[1..].split(SEP2)
+    key = email.to_s.strip.downcase
+    key = name.to_s.strip if key.empty?
+    author = authors[key]
+    author[:names][name.to_s.strip] += 1 unless name.to_s.strip.empty?
+    week = week_of(Date.parse(iso))
+    current = author[:weeks][week]
+    current[:commits] += 1
+    touched = {}
+  elsif current
+    add, del, path = line.split("\t", 3)
+    next if add == "-" || path.nil? # binary file
+
+    # handle rename syntax: "old => new" / "dir/{a => b}/file"
+    path = path.split(" => ").last.delete("{}") if path.include?("=>")
+    b = bucket_for(path)
+    # A commit counts toward a bucket the first time it touches a file of that
+    # bucket, so the commits chart can be filtered the same way as the lines.
+    unless touched[b]
+      touched[b] = true
+      current[:"#{b}_commits"] += 1
+    end
+    current[:"#{b}_add"] += add.to_i
+    current[:"#{b}_del"] += del.to_i
+  end
+end
+
+SERIES = %i[commits code_commits spec_commits docs_commits
+  code_add code_del spec_add spec_del docs_add docs_del].freeze
+
+# Second pass: fold together identities that share a display name (same person,
+# two emails). Names are compared accent- and case-insensitively.
+def normalize_name(name)
+  name.to_s.unicode_normalize(:nfd).gsub(/\p{Mn}/, "").downcase.strip
+end
+
+merged = {}
+authors.each_value do |a|
+  key = normalize_name(a[:names].max_by { |_n, c| c }&.first)
+  key = a[:emails].first if key.empty?
+  if (into = merged[key])
+    a[:names].each { |n, c| into[:names][n] += c }
+    into[:emails] |= a[:emails]
+    a[:weeks].each { |wk, d| SERIES.each { |k| into[:weeks][wk][k] += d[k] } }
+  else
+    merged[key] = a
+  end
+end
+authors = merged
+
+today = Date.today
+first_week = Date.parse(week_of(today - DAYS + 1))
+last_week = Date.parse(week_of(today))
+weeks = []
+w = first_week
+while w <= last_week
+  weeks << w.to_s
+  w += 7
+end
+
+def series_for(weeks, week_data)
+  SERIES.to_h { |k| [k, weeks.map { |wk| (week_data[wk] || {})[k].to_i }] }
+end
+
+totals = Hash.new { |h, k| h[k] = new_week }
+authors.each_value do |a|
+  a[:weeks].each { |wk, d| SERIES.each { |k| totals[wk][k] += d[k] } }
+end
+
+payload = {
+  repo: File.basename(REPO),
+  generated_at: Time.now.strftime("%Y-%m-%d %H:%M"),
+  days: DAYS,
+  weeks: weeks,
+  total: series_for(weeks, totals),
+  authors: authors.values
+    .sort_by { |a| -a[:weeks].values.sum { |d| d[:commits] } }
+    .map { |a|
+      {
+        name: a[:names].max_by { |_n, c| c }&.first || a[:emails].first,
+        emails: a[:emails],
+        series: series_for(weeks, a[:weeks])
+      }
+    }
+}
+
+html = <<~HTML
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Git activity — #{payload[:repo]}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #f7f7f5; --panel: #fff; --ink: #1b1b19; --muted: #6b6b66;
+        --line: #e3e3de; --code: #2f6f4f; --spec: #3b6ea5; --docs: #b07d2b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { --bg:#16171a; --panel:#1e2024; --ink:#ececeb; --muted:#9a9a94;
+                --line:#2c2f34; --code:#5fbf8c; --spec:#6ea8e0; --docs:#e0b45f; }
+      }
+      * { box-sizing: border-box; }
+      body { margin:0; background:var(--bg); color:var(--ink);
+        font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
+      h1 { font-size: 22px; margin: 0 0 4px; letter-spacing:-.01em; }
+      h2 { font-size: 16px; margin: 0; letter-spacing:-.01em; }
+      .sub { color: var(--muted); margin: 0 0 24px; }
+      .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+        padding:18px; margin-bottom:20px; }
+      .head { display:flex; flex-wrap:wrap; gap:12px; align-items:baseline;
+        justify-content:space-between; margin-bottom:14px; }
+      .stats { display:flex; flex-wrap:wrap; gap:18px; color:var(--muted); font-size:13px; }
+      .stats b { color:var(--ink); font-variant-numeric: tabular-nums; }
+      .charts { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
+      @media (max-width: 760px) { .charts { grid-template-columns: 1fr; } }
+      .chart { position:relative; height: 220px; }
+      .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:8px; }
+      .swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; }
+      .note { color:var(--muted); font-size:12px; }
+  .topbar { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start;
+    justify-content:space-between; }
+  .filter { display:flex; align-items:center; gap:8px; color:var(--muted);
+    font-size:13px; white-space:nowrap; }
+  select { font:inherit; color:var(--ink); background:var(--panel);
+    border:1px solid var(--line); border-radius:7px; padding:6px 10px; }
+    </style>
+    </head>
+    <body>
+    <div class="wrap" id="app"></div>
+    <script>const DATA = #{JSON.generate(payload)};</script>
+    <script>
+    const BUCKETS = ['code', 'spec', 'docs'];
+    const LABELS = { all: 'Everything', code: 'Code only', spec: 'Specs only', docs: 'Docs (.md) only' };
+    // Remembered per repo: a filter carried over from another report (file://
+    // URLs all share one origin) would silently show an empty page.
+    const STORE_KEY = 'git_stats_filter:' + DATA.repo;
+    const hasData = f => f === 'all' || DATA.total[f + '_commits'].some(v => v > 0);
+    let filter = 'all';
+    try {
+      const saved = localStorage.getItem(STORE_KEY);
+      if (saved && LABELS[saved] && hasData(saved)) filter = saved;
+    } catch (_) {}
+  
+    const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const grid = () => css('--line');
+    const ink = () => css('--muted');
+    const fmt = n => n.toLocaleString();
+    const sum = a => a.reduce((x, y) => x + y, 0);
+    const active = () => (filter === 'all' ? BUCKETS : [filter]);
+  
+    const panels = [];
+  
+    const baseOpts = () => ({
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(Math.abs(c.parsed.y))}` } }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, border: { color: grid() },
+             ticks: { color: ink(), maxRotation: 0, autoSkipPadding: 24, font: { size: 10 } } },
+        y: { stacked: true, grid: { color: grid() }, border: { display: false },
+             ticks: { color: ink(), font: { size: 10 }, callback: v => fmt(Math.abs(v)) } }
+      }
+    });
+  
+    function commitsSeries(s) {
+      return filter === 'all' ? s.commits : s[filter + '_commits'];
+    }
+  
+    function commitsDatasets(s) {
+      return [{
+        label: filter === 'all' ? 'commits' : filter + ' commits',
+        data: commitsSeries(s),
+        backgroundColor: css(filter === 'all' ? '--code' : '--' + filter),
+        borderRadius: 2
+      }];
+    }
+  
+    function linesDatasets(s) {
+      const bs = active();
+      return [
+        ...bs.map(b => ({ label: b + ' +', data: s[b + '_add'], backgroundColor: css('--' + b), borderRadius: 1 })),
+        ...bs.map(b => ({ label: b + ' −', data: s[b + '_del'].map(v => -v), backgroundColor: css('--' + b), borderRadius: 1 }))
+      ];
+    }
+  
+    function statsHTML(s) {
+      const commits = `<span><b>${fmt(sum(commitsSeries(s)))}</b> commits</span>`;
+      const lines = active().map(b =>
+        `<span><b>+${fmt(sum(s[b + '_add']))}</b> / <b>-${fmt(sum(s[b + '_del']))}</b> ${b}</span>`);
+      return [commits, ...lines].join('');
+    }
+  
+    function legendHTML() {
+      const swatches = active().map(b =>
+        `<span><i class="swatch" style="background:${css('--' + b)}"></i>${b}</span>`).join('');
+      return swatches + '<span>additions up, deletions down</span>';
+    }
+  
+    function commitsNote() {
+      return filter === 'all'
+        ? 'Commits per week'
+        : `Commits per week touching at least one ${filter} file`;
+    }
+  
+    function panel(title, subtitle, series) {
+      const el = document.createElement('div');
+      el.className = 'panel';
+      el.innerHTML = `
+        <div class="head">
+          <div><h2>${title}</h2>${subtitle ? `<div class="note">${subtitle}</div>` : ''}</div>
+          <div class="stats"></div>
+        </div>
+        <div class="charts">
+          <div><div class="chart"><canvas></canvas></div>
+            <div class="legend commits-note"></div></div>
+          <div><div class="chart"><canvas></canvas></div>
+            <div class="legend lines-legend"></div></div>
+        </div>`;
+      const [c1, c2] = el.querySelectorAll('canvas');
+      const p = {
+        series,
+        stats: el.querySelector('.stats'),
+        commitsNote: el.querySelector('.commits-note'),
+        linesLegend: el.querySelector('.lines-legend'),
+        commitsChart: new Chart(c1, { type: 'bar', data: { labels: DATA.weeks, datasets: [] }, options: baseOpts() }),
+        linesChart: new Chart(c2, { type: 'bar', data: { labels: DATA.weeks, datasets: [] }, options: baseOpts() })
+      };
+      panels.push(p);
+      return el;
+    }
+  
+    function render() {
+      panels.forEach(p => {
+        p.stats.innerHTML = statsHTML(p.series);
+        p.commitsNote.innerHTML = `<span>${commitsNote()}</span>`;
+        p.linesLegend.innerHTML = legendHTML();
+        p.commitsChart.data.datasets = commitsDatasets(p.series);
+        p.linesChart.data.datasets = linesDatasets(p.series);
+        p.commitsChart.update();
+        p.linesChart.update();
+      });
+    }
+  
+    const app = document.getElementById('app');
+    const header = document.createElement('div');
+    header.className = 'topbar';
+    header.innerHTML = `
+      <div>
+        <h1>Git activity — ${DATA.repo}</h1>
+        <p class="sub">Last ${DATA.days} days, by week (Mondays) · ${DATA.authors.length} authors ·
+        merges excluded · generated ${DATA.generated_at}</p>
+      </div>
+      <label class="filter">Show
+        <select id="filter">
+          ${Object.entries(LABELS).map(([v, l]) =>
+            `<option value="${v}"${v === filter ? ' selected' : ''}${hasData(v) ? '' : ' disabled'}>${l}${hasData(v) ? '' : ' — none'}</option>`).join('')}
+        </select>
+      </label>`;
+    app.appendChild(header);
+    app.appendChild(panel('All authors', '', DATA.total));
+    DATA.authors.forEach(a => app.appendChild(panel(a.name, a.emails.join(', '), a.series)));
+  
+    document.getElementById('filter').addEventListener('change', e => {
+      filter = e.target.value;
+      try { localStorage.setItem(STORE_KEY, filter); } catch (_) {}
+      render();
+    });
+  
+    render();
+    </script>
+    </body>
+    </html>
+HTML
+
+File.write(OUTPUT, html)
+warn "Wrote #{OUTPUT} (#{payload[:authors].size} authors, #{payload[:weeks].size} weeks)"
+system(RUBY_PLATFORM.include?("darwin") ? "open" : "xdg-open", OUTPUT) if OPEN_AFTER
