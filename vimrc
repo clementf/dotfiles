@@ -58,6 +58,7 @@ Plugin 'jkramer/vim-checkbox'
 Plugin 'mg979/vim-visual-multi', {'branch': 'master'}
 
 Plugin 'neoclide/coc.nvim'
+Plugin 'github/copilot.vim'
 
 Plugin 'ConradIrwin/vim-bracketed-paste'
 Plugin 'chrisbra/csv.vim'
