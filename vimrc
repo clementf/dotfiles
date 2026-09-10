@@ -49,6 +49,7 @@ Plugin 'elmcast/elm-vim'
 Plugin 'isRuslan/vim-es6'
 Plugin 'wuelnerdotexe/vim-astro'
 Plugin 'leafOfTree/vim-svelte-plugin'
+Plugin 'slim-template/vim-slim'
 Plugin 'mbbill/undotree'
 Plugin 'arcticicestudio/nord-vim'
 Plugin 'jacoborus/tender.vim'
@@ -203,7 +204,7 @@ let g:user_emmet_leader_key=','
 set wildignore+=*/tmp/*,*.so,*.swp,*.zip
 
 " remove trailing spaces when saving
-autocmd BufWritePre * %s/\s\+$//e
+autocmd BufWritePre *\(.slim\|.diffs\)\@<! %s/\s\+$//e
 
 noremap <leader>q :q<cr>
 nnoremap <leader>s :w<cr>
