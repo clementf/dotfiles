@@ -210,7 +210,6 @@ autocmd BufWritePre *\(.slim\|.diffs\)\@<! %s/\s\+$//e
 noremap <leader>q :q<cr>
 nnoremap <leader>s :w<cr>
 
-" align  current paragraph mapped to leader i
 " map leader p to fzt fuzzy search
 map <leader>p :Files<CR>
 " map leader f to  search in buffer
