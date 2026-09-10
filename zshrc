@@ -143,3 +143,4 @@ alias srb="git diff --name-only --diff-filter=ACMR master...$1 | grep '\.rb$' | 
 export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
 alias zed="/Applications/Zed.app/Contents/MacOS/cli"
 export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
