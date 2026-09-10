@@ -2,6 +2,7 @@ PATH=/usr/local/share/python:$PATH
 PATH=$PATH:/usr/local/sbin
 export PATH="$HOME/.rbenv/bin:$PATH"
 export PATH="$HOME/.npm/lib/node_modules:$PATH"
+export PATH="$HOME/.pyenv/shims:$PATH"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
