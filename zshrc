@@ -139,3 +139,5 @@ alias awk=gawk
 export PATH="/opt/cloud66/bin:${PATH}"
 # AM to get only added and modified files
 alias srb="git diff --name-only --diff-filter=ACMR master...$1 | grep '\.rb$' | xargs standardrb --fix"
+
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
