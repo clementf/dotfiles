@@ -137,3 +137,5 @@ alias ibrew='arch -x86_64 /usr/local/bin/brew'
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 alias awk=gawk
 export PATH="/opt/cloud66/bin:${PATH}"
+# AM to get only added and modified files
+alias srb="git diff --name-only --diff-filter=ACMR master...$1 | grep '\.rb$' | xargs standardrb --fix"
