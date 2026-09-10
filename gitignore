@@ -63,3 +63,13 @@ config/definitions.rb
 
 .cursor
 CLAUDE.md
+
+# Local parallel-dev-instance tooling (see docs/git_worktree.md in tract).
+# Untracked for now; promote into the repo if the team wants it.
+.env.worktree
+.env.test.local
+bin/worktree
+bin/wt
+**/.claude/settings.json
+config/initializers/zzz_worktree_local.rb
+lib/tasks/zzz_worktree_local.rake

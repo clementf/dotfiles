@@ -1,0 +1,54 @@
+#!/usr/bin/env sh
+# Run a command with this worktree's environment (ports, Postgres cluster, Redis DBs).
+#
+#   bin/wt bin/dev        bin/wt rails c        bin/wt rspec spec/models
+#
+# Needed because bin/vite is a bare Ruby CLI that never loads dotenv, so VITE_RUBY_PORT
+# would not reach it via .env — and because bare psql/pg_dump need TRACT_DB_PORT too.
+# In the primary checkout there is no .env.worktree, so this is a transparent no-op.
+
+if [ -f ./.env.worktree ]; then
+  set -a
+  . ./.env.worktree
+  set +a
+  export PGPORT="${TRACT_DB_PORT:-5432}"
+
+  # Keep this worktree's dev Vite port away from the test environment. vite_ruby decides
+  # a dev server is running by connecting to host:port, whatever the environment, and then
+  # both serves dev-server URLs that 404 and skips the build (should_build? is
+  # `auto_build && !dev_server_running?`) — so js: true specs silently run with no
+  # JavaScript. .env.test.local handles plain `bundle exec rspec`, but a variable exported
+  # here outranks dotenv, so test runs need the override applied again.
+  case "$*" in
+    *rspec*|*RAILS_ENV=test*|*cucumber*)
+      export VITE_RUBY_PORT="$((3037 + ${TRACT_SLOT:-0} * 10))"
+      ;;
+  esac
+fi
+
+# Refuse schema changes when this worktree shares the primary database. The same check
+# lives in lib/tasks/worktree_db_guard.rake, which is the thorough one — but that file
+# only exists on branches that have it, and a worktree cut from an older branch would be
+# unguarded. This copy is always current, because bin/worktree copies it from the primary
+# at provisioning time. See docs/git_worktree.md.
+if [ -n "$TRACT_SLOT" ] && [ "$TRACT_SLOT" != "0" ] && [ "${TRACT_DB_PORT:-5432}" = "5432" ]; then
+  case "$*" in
+    *db:migrate*|*db:rollback*|*db:reset*|*db:drop*|*db:schema:load*|*db:structure:load*|*pull_production_database*)
+      cat >&2 <<MSG
+Refusing to change the schema: this worktree (slot $TRACT_SLOT) shares the PRIMARY
+development database on port 5432, so migrating here would migrate your main database
+and leave every other checkout with a schema it does not expect.
+
+Give this worktree its own database first — it is an APFS clone, so it costs roughly
+nothing and takes about a second:
+
+    bin/worktree promote $(basename "$PWD")
+
+Then re-run this command.
+MSG
+      exit 1
+      ;;
+  esac
+fi
+
+exec "$@"

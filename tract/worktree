@@ -1,0 +1,884 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+#
+# Parallel dev instances for TRACT. Each worktree ("slot") gets its own ports, Redis
+# databases, session cookie and — when its branch carries migrations — its own Postgres
+# cluster, cloned from a permanently-stopped golden cluster.
+#
+# The clone is an APFS reflink: copying the 19 GB PGDATA costs milliseconds and ~0 bytes,
+# diverging only as pages are actually rewritten. That is what makes N instances
+# affordable on a laptop, where a conventional copy would cost 19 GB apiece.
+#
+#   bin/worktree new NAME [--branch B] [--from REF] [--own-db|--shared-db]
+#   bin/worktree adopt              # provision the worktree we are standing in
+#   bin/worktree list
+#   bin/worktree reset NAME         # throw the branch DB away, re-clone from golden
+#   bin/worktree rm NAME
+#
+# `adopt` exists because Claude Code creates worktrees itself (claude -w, background
+# sessions, subagent isolation) and its WorktreeCreate hook only substitutes for git in
+# a non-git repo — so in this repo it never fires. A SessionStart hook runs `adopt`
+# instead, which provisions whatever worktree the session happens to open in.
+#
+# Untracked by design (see ~/.gitignore). Nothing here is required by the app: with no
+# .env.worktree present, every config default reproduces the old single-instance setup.
+
+require "json"
+require "fileutils"
+require "open3"
+require "tmpdir"
+
+# ~/.psqlrc echoes its \pset lines to stdout, which -tAc does not suppress, so every
+# psql call below would otherwise return banner text prepended to its result.
+ENV["PSQLRC"] = "/dev/null"
+
+PG_BIN = "/opt/homebrew/opt/postgresql@17/bin"
+GOLDEN_DIR = "/opt/homebrew/var/tract-golden"
+CLUSTERS = "/opt/homebrew/var"
+MAX_SLOTS = 8
+GOLDEN_BUILD_PORT = 5443
+DOTFILES_BIN = __dir__
+
+# git-common-dir resolves to the primary checkout's .git even from inside a worktree,
+# so every subcommand behaves identically wherever it is run from.
+common = Open3.capture2("git rev-parse --path-format=absolute --git-common-dir 2>/dev/null").first.strip
+if common.empty?
+  # Not a git repo. Silent success, because a user-level SessionStart hook runs this
+  # everywhere and a noisy failure there would be worse than useless.
+  exit 0 if ARGV.first == "adopt"
+  abort "not in a git repository"
+end
+PRIMARY = File.dirname(common)
+HERE = Open3.capture2("git rev-parse --show-toplevel 2>/dev/null").first.strip
+IN_WORKTREE = HERE != PRIMARY
+WORKTREE_ROOT = File.join(PRIMARY, ".claude", "worktrees")
+
+# Only ever touch this project. The marker is the dev database name, which no other
+# repo on this machine has.
+def this_project?
+  db = File.join(PRIMARY, "config", "database.yml")
+  File.exist?(db) && File.read(db).include?("timber_app_development")
+end
+
+def sh(cmd, check: true, quiet: false)
+  warn "  $ #{cmd}" unless quiet
+  out, status = Open3.capture2e(cmd)
+  abort "failed (#{status.exitstatus}): #{cmd}\n#{out}" if check && !status.success?
+  out
+end
+
+def pg(cmd, check: true) = sh("#{PG_BIN}/#{cmd}", check: check)
+
+def say(msg) = warn(msg)
+
+# --- slots -------------------------------------------------------------------
+# Slot 0 is the primary checkout and owns the defaults now baked into config/* as ENV
+# fallbacks, so it keeps behaving exactly as it did before any of this existed.
+def env_for(slot, base: "origin/master")
+  {
+    "TRACT_SLOT" => slot.to_s,
+    "TRACT_BASE" => base,
+    "PORT" => 3000 + slot,
+    # steps by 10 because config/vite.json reserves 3037 for the test environment
+    "VITE_RUBY_PORT" => 3036 + (slot * 10),
+    "TRACT_DB_PORT" => 5444 + slot,
+    "REDIS_URL" => "redis://localhost:6379/#{2 + slot * 2}",
+    "CABLE_REDIS_URL" => "redis://localhost:6379/#{3 + slot * 2}",
+    # Redis pub/sub is global across DB indexes, so the prefix — not the index — is what
+    # stops one instance's Turbo Streams reaching another's browser tabs.
+    "CABLE_CHANNEL_PREFIX" => "tract_dev_wt#{slot}",
+    "SESSION_COOKIE_NAME" => "_timber_app_session_wt#{slot}",
+    # Only the primary runs the 18 cron entries in config/sidekiq.yml.
+    "SIDEKIQ_SCHEDULER" => "false",
+    # Procfile.dev starts its own redis-server, which binds *:6379 and so fails from the
+    # second instance onward. Overmind skips the process entirely with this set, and the
+    # instance uses the primary's Redis on its own database index.
+    "OVERMIND_IGNORED_PROCESSES" => "redis",
+    # overmind treats PORT as a base and adds --port-step (default 100) per process,
+    # which put `web` on 3401 rather than 3001. Only `web` reads $PORT, so flattening
+    # the step is safe and makes the advertised port the real one.
+    "OVERMIND_PORT_STEP" => "0"
+  }
+end
+
+def used_slots
+  Dir.glob(File.join(WORKTREE_ROOT, "*", ".env.worktree")).filter_map do |f|
+    File.read(f)[/^TRACT_SLOT=(\d+)/, 1]&.to_i
+  end
+end
+
+def next_slot
+  used = used_slots
+  free = (1...MAX_SLOTS).find { |s| !used.include?(s) }
+  unless free
+    abort "all #{MAX_SLOTS - 1} slots are in use (#{used.sort.join(", ")}). " \
+          "Free one with `bin/worktree rm NAME`, or raise MAX_SLOTS."
+  end
+  free
+end
+
+def cluster_dir(name) = File.join(CLUSTERS, "tract-wt-#{name}")
+
+def cluster_running?(dir) = system("#{PG_BIN}/pg_ctl -D #{dir} status >/dev/null 2>&1")
+
+# --- database ----------------------------------------------------------------
+def clone_golden(name, port)
+  abort "golden cluster missing at #{GOLDEN_DIR}" unless Dir.exist?(GOLDEN_DIR)
+  if cluster_running?(GOLDEN_DIR)
+    abort "golden is RUNNING. It must stay stopped: a running cluster cannot be copied " \
+          "consistently, and a stopped one also cannot be mutated by accident."
+  end
+
+  dir = cluster_dir(name)
+  FileUtils.rm_rf(dir) if Dir.exist?(dir)
+  # -c is the whole trick: APFS clonefile, instant and free until written to.
+  sh("cp -Rpc #{GOLDEN_DIR} #{dir}")
+  pid = File.join(dir, "postmaster.pid")
+  File.delete(pid) if File.exist?(pid)
+
+  conf = File.join(dir, "postgresql.conf")
+  File.write(conf, File.read(conf).sub(/^port = \d+/, "port = #{port}"))
+  start_cluster(dir, port)
+end
+
+def start_cluster(dir, port)
+  return if cluster_running?(dir)
+
+  pg("pg_ctl -D #{dir} -l #{dir}/server.log start")
+  40.times do
+    return if system("#{PG_BIN}/psql -p #{port} -h localhost -d postgres -c 'select 1' >/dev/null 2>&1")
+    sleep 0.5
+  end
+  abort "cluster #{dir} did not come up — see #{dir}/server.log"
+end
+
+def stop_cluster(dir)
+  pg("pg_ctl -D #{dir} -m fast stop", check: false) if Dir.exist?(dir) && cluster_running?(dir)
+end
+
+def has_migrations?(path, branch, base)
+  merge_base = Open3.capture2("git -C #{path} merge-base #{base} #{branch}").first.strip
+  return false if merge_base.empty?
+
+  !Open3.capture2("git -C #{path} diff --name-only #{merge_base}..#{branch} -- db/migrate")
+    .first.strip.empty?
+end
+
+# --- provisioning ------------------------------------------------------------
+# Shared by `new` (which creates the worktree first) and `adopt` (which is handed one
+# that Claude Code already created).
+def provision(path, name, branch, base: "origin/master", db: :auto)
+  slot = next_slot
+  env = env_for(slot, base: base)
+  say "Provisioning #{name} as slot #{slot}"
+
+  own_db = db == :own || (db == :auto && has_migrations?(path, branch, base))
+  if own_db
+    reason = (db == :own) ? "--own-db requested" : "branch carries migrations"
+    say "\n#{reason} → cloning golden into its own cluster (costs ~0 bytes)"
+    clone_golden(name, env["TRACT_DB_PORT"])
+  else
+    say "\nNo migrations on this branch → sharing the primary database (costs 0 bytes)"
+    env["TRACT_DB_PORT"] = 5432
+  end
+
+  File.write(File.join(path, ".env.worktree"), <<~ENVFILE)
+    # Generated by bin/worktree. Sourced by bin/wt, which every command in this worktree
+    # should go through: bin/wt bin/dev, bin/wt rails c, bin/wt rspec, bin/wt psql.
+    #{env.map { |k, v| "#{k}=#{v}" }.join("\n")}
+  ENVFILE
+
+  say "\nLinking untracked assets"
+  # .env must be a real file, not a symlink to the primary's: overmind loads ./.env and
+  # exports it *over* the inherited environment, so a symlink silently restored the
+  # primary's REDIS_URL and put this worktree's Sidekiq back on the shared queues.
+  # Credentials are copied as of provisioning time; re-run `adopt` after changing them.
+  write_env(path, env)
+  write_local_config(path)
+  # 1.8 GB of CarrierWave dev uploads — shared, never copied.
+  link(File.join(PRIMARY, "public/uploads"), File.join(path, "public/uploads"))
+  # node_modules must be per-worktree (vite writes into it) but the reflink is free.
+  unless Dir.exist?(File.join(path, "node_modules"))
+    sh("cp -Rc #{File.join(PRIMARY, "node_modules")} #{File.join(path, "node_modules")}")
+  end
+  # Symlink rather than copy: a copied bin/worktree goes stale the moment the real one
+  # gains a subcommand, and the worktree would then reject it as unknown. The originals
+  # live at a stable path outside any checkout, so a link is safe.
+  %w[wt worktree].each do |f|
+    src = File.join(DOTFILES_BIN, f)
+    dest = File.join(path, "bin", f)
+    next unless File.exist?(src)
+
+    File.delete(dest) if File.symlink?(dest) || File.exist?(dest)
+    File.symlink(src, dest)
+  end
+
+  say "\nPreparing"
+  sh("cd #{path} && bundle check || (cd #{path} && bundle install)", check: false)
+  sh("cd #{path} && ./bin/wt bin/rails db:prepare", check: false) if own_db
+
+  say <<~DONE
+
+    #{"=" * 62}
+    #{name} ready (slot #{slot})
+      cd #{path}
+      bin/wt bin/dev            → http://localhost:#{env["PORT"]}
+      database                  → #{own_db ? "own cluster on port #{env["TRACT_DB_PORT"]}" : "shared, port 5432"}
+    #{"=" * 62}
+  DONE
+
+  slot
+end
+
+# .env must be a real file, not a symlink to the primary's: overmind loads ./.env and
+# exports it *over* the inherited environment, so a symlink silently restored the
+# primary's REDIS_URL and put this worktree's Sidekiq back on the shared queues.
+# Everything the app needs to behave as a separate instance, written into the worktree
+# as untracked files rather than committed to the repo. Both are auto-loaded by Rails,
+# and both are in ~/.gitignore, so the checked-out code stays untouched — which is the
+# whole point: this workflow can be trialled without anything landing in review.
+#
+# What each one replaces:
+#   initializer -> editing config/cable.yml (ActionCable url + channel_prefix) and
+#                  config/sidekiq.yml (disabling the 18-entry cron schedule)
+#   rake file   -> a committed guard on db:migrate and friends
+# The database port needs nothing: bin/wt exports PGPORT, and libpq honours it because
+# config/database.yml specifies no port for development.
+def relink_bins(path)
+  %w[wt worktree].each do |f|
+    src = File.join(DOTFILES_BIN, f)
+    dest = File.join(path, "bin", f)
+    next unless File.exist?(src)
+    next if File.symlink?(dest) && File.readlink(dest) == src
+
+    File.delete(dest) if File.symlink?(dest) || File.exist?(dest)
+    File.symlink(src, dest)
+  end
+end
+
+def write_local_config(path)
+  File.write(File.join(path, "config", "initializers", "zzz_worktree_local.rb"), <<~INIT)
+    # Generated by bin/worktree — untracked, per worktree. Do not commit.
+    if ENV["TRACT_SLOT"].to_s != "" && ENV["TRACT_SLOT"] != "0"
+      # Redis pub/sub is global across database indexes, so a different index does NOT
+      # isolate ActionCable — the channel_prefix is what does. Without this, Turbo
+      # Stream broadcasts leak between instances.
+      #
+      # Development only. config/cable.yml already points test at the async adapter, and
+      # spec/rails_helper.rb replaces Redis with MockRedis, which has no #without_reconnect
+      # — so forcing the redis adapter here kills every `js: true` feature spec the moment
+      # its page opens a cable connection, with a NoMethodError raised on ActionCable's
+      # listener thread and blamed on whichever example was running. There is nothing to
+      # isolate in test anyway: the async adapter is process-local by construction.
+      unless Rails.env.test?
+        # Symbol keys, not strings: ActionCable reads cable[:channel_prefix], so a
+        # string-keyed hash leaves the prefix nil and silently un-isolates broadcasts.
+        Rails.application.config.action_cable.cable = {
+          adapter: "redis",
+          url: ENV.fetch("CABLE_REDIS_URL", "redis://localhost:6379/1"),
+          channel_prefix: ENV.fetch("CABLE_CHANNEL_PREFIX", "tract_dev_cable")
+        }
+      end
+
+      # Only the primary instance should run the schedule; otherwise every cron entry
+      # fires once per running worktree — N outbound emails, N NetSuite syncs, and N
+      # matview rewrites (a full rewrite costs ~2.9 GB of copy-on-write divergence).
+      Rails.application.config.after_initialize do
+        if defined?(SidekiqScheduler::Scheduler) && ENV["SIDEKIQ_SCHEDULER"] != "true"
+          SidekiqScheduler::Scheduler.enabled = false
+        end
+      end
+    end
+  INIT
+
+  File.write(File.join(path, "lib", "tasks", "zzz_worktree_local.rake"), <<~'RAKE')
+    # Generated by bin/worktree — untracked, per worktree. Do not commit.
+    #
+    # Refuse schema changes when this worktree shares the primary development database.
+    # The shared/own decision is made at provisioning time, so a migration written later
+    # would otherwise be applied to the primary database. bin/wt repeats this check in
+    # shell; this copy catches invocations that bypass the shim.
+    task :worktree_db_guard do
+      slot = ENV["TRACT_SLOT"].to_s
+      next if slot.empty? || slot == "0"
+      next unless ENV.fetch("TRACT_DB_PORT", "5432") == "5432"
+
+      abort <<~MESSAGE
+        Refusing to change the schema: this worktree (slot #{slot}) shares the PRIMARY
+        development database on port 5432, so migrating here would migrate your main
+        database and leave every other checkout with a schema it does not expect.
+
+        Give this worktree its own database first (an APFS clone, ~1 second, ~0 bytes):
+
+            bin/worktree promote #{File.basename(Dir.pwd)}
+      MESSAGE
+    end
+
+    # Declared as prerequisites rather than via Rake::Task#enhance so they apply even
+    # though these tasks are defined later, by the Active Record railtie.
+    %w[
+      db:migrate db:migrate:up db:migrate:down db:migrate:redo
+      db:rollback db:reset db:drop db:schema:load db:structure:load
+    ].each { |name| task name => :worktree_db_guard }
+  RAKE
+end
+
+def write_env(path, env)
+  primary_env = File.join(PRIMARY, ".env")
+  return unless File.exist?(primary_env)
+
+  overrides = env.map { |k, v| %(#{k}="#{v}") }.join("\n")
+  File.write(File.join(path, ".env"),
+    "#{File.read(primary_env).chomp}\n\n" \
+    "# --- worktree overrides (generated by bin/worktree; must come last) ---\n" \
+    "#{overrides}\n")
+  write_test_env(path, env)
+end
+
+# VITE_RUBY_PORT must not reach the test environment. vite_ruby decides whether a dev
+# server is running by opening a TCP socket to host:port (vite_ruby.rb:86) — it does not
+# care which environment asked. So with the dev server up on this worktree's port, a spec
+# run concludes the dev server is live, emits /vite-test/@vite/client and unhashed entry
+# URLs that 404, AND skips the build entirely, because
+# `should_build? = auto_build && !dev_server_running?` (manifest.rb:106). Every `js: true`
+# spec then runs against a page with no JavaScript, failing in whatever way that page
+# happens to fail — no error mentions Vite.
+#
+# dotenv loads .env.<env>.local first and never overwrites an already-set key, so this
+# shadows the VITE_RUBY_PORT in .env for test only. The port itself is arbitrary — nothing
+# should ever be listening on it, which is the point — but it follows the same +10-per-slot
+# scheme as the dev port so it stays collision-free if a test dev server is ever run.
+# bin/wt applies the same override for commands it can see are test runs, since a variable
+# exported into the shell beats dotenv.
+def write_test_env(path, env)
+  File.write(File.join(path, ".env.test.local"), <<~ENVFILE)
+    # Generated by bin/worktree — untracked, per worktree. Do not commit.
+    # Keeps this worktree's dev Vite server (VITE_RUBY_PORT in .env) from being mistaken
+    # for a test one. See write_test_env in bin/worktree and docs/git_worktree.md.
+    VITE_RUBY_PORT="#{3037 + env.fetch("TRACT_SLOT", 0).to_i * 10}"
+  ENVFILE
+end
+
+def link(target, at)
+  return unless File.exist?(target)
+  return if File.symlink?(at) || File.exist?(at)
+
+  File.symlink(target, at)
+end
+
+# --- commands ----------------------------------------------------------------
+def cmd_new(name, branch: nil, db: :auto, from: "origin/master")
+  abort "usage: bin/worktree new NAME" if name.to_s.empty?
+  abort "run from the primary checkout, not inside a worktree" if IN_WORKTREE
+
+  # NAME may itself be an existing branch — the usual way to move work already in
+  # progress into a worktree. Directory name is its last segment, so
+  # `new cferey/some-feature` lands in .claude/worktrees/some-feature.
+  if branch.nil? && Open3.capture2e("git rev-parse --verify --quiet refs/heads/#{name}").last.success?
+    branch = name
+    name = File.basename(name)
+    say "#{branch} is an existing branch — moving it into a worktree"
+  end
+
+  path = File.join(WORKTREE_ROOT, name)
+  abort "#{path} already exists" if Dir.exist?(path)
+
+  generated = branch.nil?
+  branch ||= "wt/#{name}"
+  FileUtils.mkdir_p(WORKTREE_ROOT)
+  if Open3.capture2e("git rev-parse --verify #{branch}").last.success?
+    at = Open3.capture2("git rev-parse --short #{branch}").first.strip
+    if generated
+      # Only guard generated names: a stale wt/ branch left over from a previous worktree
+      # would otherwise be reused at its old commit, silently ignoring --from.
+      wanted = Open3.capture2("git rev-parse --short #{from}").first.strip
+      if at != wanted && !Open3.capture2e("git merge-base --is-ancestor #{from} #{branch}").last.success?
+        abort "branch #{branch} already exists at #{at}, which does not contain #{from} (#{wanted}).\n" \
+              "Delete it (git branch -D #{branch}) or pass --branch with another name."
+      end
+    end
+    behind = Open3.capture2("git rev-list --count #{branch}..#{from}").first.strip
+    say "  using existing branch #{branch} at #{at}#{" (#{behind} commits behind #{from})" if behind.to_i > 0}"
+    sh("git worktree add #{path} #{branch}")
+  else
+    sh("git fetch origin master", check: false) if from == "origin/master"
+    abort "no such ref: #{from}" unless Open3.capture2e("git rev-parse --verify #{from}").last.success?
+    say "  basing #{branch} on #{from}"
+    sh("git worktree add #{path} -b #{branch} #{from}")
+  end
+
+  provision(path, name, branch, base: from, db: db)
+end
+
+# Provision the worktree we are standing in. Idempotent and silent when there is nothing
+# to do, because a SessionStart hook runs this on every session in every directory.
+def cmd_adopt(quiet_when_noop: false)
+  unless this_project?
+    say "not the tract repo — nothing to do" unless quiet_when_noop
+    return
+  end
+  unless IN_WORKTREE
+    say "not in a worktree — nothing to adopt" unless quiet_when_noop
+    return
+  end
+  if File.exist?(File.join(HERE, ".env.worktree"))
+    # Already provisioned: keep the slot, but rebuild .env so credentials changed in the
+    # primary reach this worktree. The overrides must stay last, since overmind loads
+    # .env over the inherited environment.
+    # Reuse the values already recorded, never env_for(slot): a worktree that shares the
+    # primary database has TRACT_DB_PORT=5432, and regenerating would silently repoint it
+    # at a per-slot cluster that does not exist.
+    existing = File.read(File.join(HERE, ".env.worktree")).scan(/^(\w+)=(.*)$/).to_h
+    write_env(HERE, existing)
+    write_local_config(HERE)
+    relink_bins(HERE)
+    say "slot #{existing["TRACT_SLOT"]} already provisioned; .env re-synced from the primary" unless quiet_when_noop
+    return
+  end
+
+  name = File.basename(HERE)
+  branch = Open3.capture2("git -C #{HERE} rev-parse --abbrev-ref HEAD").first.strip
+  say "Adopting unprovisioned worktree #{name} (branch #{branch})"
+
+  # Default to a dedicated cluster here, unlike `new`. An adopted worktree was created
+  # by Claude Code, which branches off master — so it has no migrations *yet*, but an
+  # agent may well add one mid-session, and db:migrate against the shared primary
+  # database is exactly the accident this whole setup exists to prevent. The clone is
+  # free, so there is no reason to gamble. Override with TRACT_SHARED_DB=1.
+  db = (ENV["TRACT_SHARED_DB"] == "1") ? :auto : :own
+  provision(HERE, name, branch, db: db)
+end
+
+# Give a shared worktree its own cluster. Needed when a migration is written after the
+# worktree was created, since the shared/own decision is made at provisioning time and
+# lib/tasks/worktree_db_guard.rake refuses to migrate a shared one.
+def cmd_promote(name)
+  name = File.basename(HERE) if name.to_s.empty? && IN_WORKTREE
+  abort "usage: bin/worktree promote NAME" if name.to_s.empty?
+
+  path = File.join(WORKTREE_ROOT, name)
+  abort "no such worktree: #{name}" unless Dir.exist?(path)
+
+  envfile = File.join(path, ".env.worktree")
+  env = File.read(envfile).scan(/^(\w+)=(.*)$/).to_h
+  if env["TRACT_DB_PORT"] != "5432"
+    say "#{name} already has its own cluster on port #{env["TRACT_DB_PORT"]}"
+    return
+  end
+
+  port = 5444 + env["TRACT_SLOT"].to_i
+  say "Promoting #{name} to its own cluster on port #{port}"
+  clone_golden(name, port)
+
+  env["TRACT_DB_PORT"] = port.to_s
+  File.write(envfile, File.read(envfile).sub(/^TRACT_DB_PORT=.*$/, "TRACT_DB_PORT=#{port}"))
+  write_env(path, env)
+
+  sh("cd #{path} && ./bin/wt bin/rails db:migrate", check: false)
+  say "#{name} now has its own database — the primary is untouched"
+end
+
+# Tables whose ROWS are left out of the golden. The table, its indexes, its constraints
+# and its sequence are all still created, so schema, migrations and `EXPLAIN` shapes are
+# identical to production — only the data is absent.
+#
+# audits is 23 GB of the primary's 46 GB. Including it makes the golden larger than the
+# free space on this machine, and that is not theoretical: the 2026-09-09 rebuild ran out
+# of disk part-way through creating the audits indexes, produced a golden missing 6 of
+# them, and reported success. Every clone then parallel-seq-scanned 26 M rows — a
+# 1.2 ms query took 12.2 s.
+#
+# The cost of this is real and worth stating: with the table empty, the planner sees zero
+# rows, so audits query plans in a worktree mean nothing. Audit perf work belongs in the
+# primary checkout, which keeps the full dataset on 5432. Every other table is complete.
+GOLDEN_SKIP_DATA = %w[audits]
+
+# All indexes in the public schema, "table index" per line, for comparing two clusters.
+def index_list(port)
+  Open3.capture2(%(#{PG_BIN}/psql -p #{port} -h localhost -d timber_app_development -tAc ) +
+    %("select tablename||' '||indexname from pg_indexes where schemaname='public'"))
+    .first.lines.map(&:strip).reject(&:empty?).sort
+end
+
+# A pg_restore TOC with the skipped tables' data entries removed. Filtering at restore
+# time rather than dumping with --exclude-table-data keeps the dump complete, so it stays
+# a full backup of the primary while the golden built from it stays slim.
+def filtered_toc(dump)
+  return nil if GOLDEN_SKIP_DATA.empty?
+
+  toc, status = Open3.capture2("#{PG_BIN}/pg_restore -l #{dump}")
+  abort "could not read the dump's table of contents" unless status.success?
+
+  pattern = /\bTABLE DATA public (#{GOLDEN_SKIP_DATA.join("|")})\s/
+  kept = toc.lines.reject { |l| l =~ pattern }
+  dropped = toc.lines.size - kept.size
+  abort "expected to skip #{GOLDEN_SKIP_DATA.size} data entries, matched #{dropped}" if dropped.zero?
+
+  path = File.join(Dir.tmpdir, "tract-golden-toc-#{Process.pid}.txt")
+  File.write(path, kept.join)
+  say "  skipping row data for: #{GOLDEN_SKIP_DATA.join(", ")} (#{dropped} TOC entries)"
+  path
+end
+
+# Rebuild the golden cluster from a dump. Encoded as a command rather than a checklist
+# because the ordering is load-bearing and several steps are silently destructive if
+# skipped or done out of order:
+#
+#   * The old golden must be deleted BEFORE the new one is built, which means the dump is
+#     the only safety net at that moment. Hence the dump is verified with `pg_restore -l`
+#     before anything is removed.
+#   * Deleting the golden frees nothing while a worktree clone still exists, because the
+#     clone reflinks the golden's blocks and a block is only released when the last
+#     reference to it goes. So the pre-flight refuses to start until the clones are gone;
+#     re-cloning them afterwards is free.
+#   * VACUUM (FREEZE, ANALYZE) is mandatory, not hygiene. Without it the first read of
+#     each table sets hint bits and diverges the clone — measured at 560 MB from a single
+#     SELECT count(*) on a 1.9 GB table. Skipping it turns every "free" clone into a real
+#     copy and quietly fills the disk.
+#
+# The dump is never deleted: a golden that exists only as a cluster is not a backup.
+def cmd_rebuild_golden(dump: nil)
+  abort "run from the primary checkout" if IN_WORKTREE
+
+  # 1. Get a dump, and prove it is readable before trusting it with anything.
+  if dump.nil?
+    dump = File.expand_path("~/pg_golden_backup/timber_#{Time.now.strftime("%Y%m%d")}")
+    if Dir.exist?(dump)
+      say "Reusing today's dump at #{dump}"
+    else
+      say "Dumping the primary database (this is also your backup)"
+      FileUtils.mkdir_p(File.dirname(dump))
+      pg("pg_dump -Fd -j4 --no-owner --no-privileges -f #{dump} timber_app_development")
+    end
+  end
+  dump = File.expand_path(dump)
+  abort "no dump at #{dump}" unless Dir.exist?(dump)
+  unless Open3.capture2e("#{PG_BIN}/pg_restore -l #{dump} > /dev/null").last.success?
+    abort "#{dump} is not a readable pg_dump directory — refusing to touch the golden"
+  end
+  say "  dump verified: #{`du -sh #{dump}`.split.first}"
+
+  # 2. Pre-flight the disk. Nothing checked this before, which is how a rebuild managed
+  #    to run out of space and still call itself finished.
+  clones = Dir.glob(File.join(WORKTREE_ROOT, "*", ".env.worktree")).filter_map do |f|
+    name = File.basename(File.dirname(f))
+    name if Dir.exist?(cluster_dir(name))
+  end
+  unless clones.empty?
+    abort <<~PINNED
+      #{clones.size} worktree cluster(s) still exist:
+      #{clones.map { |n| "  #{n}" }.join("\n")}
+
+      Each one reflinks the golden's blocks, so deleting the golden would free almost
+      nothing and the restore would run out of disk part-way through — the exact failure
+      this check exists to prevent. Drop them first (branch and code are untouched, and
+      re-cloning afterwards costs ~1 second and ~0 bytes):
+
+      #{clones.map { |n| "  bin/worktree rm #{n}" }.join("\n")}
+
+      then re-create them with `bin/worktree new <branch>` once this finishes.
+    PINNED
+  end
+
+  skipped = GOLDEN_SKIP_DATA.map { |t| "pg_total_relation_size('#{t}')" }.join(" + ")
+  sizes = Open3.capture2(%(#{PG_BIN}/psql -d timber_app_development -tAc ) +
+    %("select pg_database_size('timber_app_development'), #{skipped.empty? ? 0 : skipped}")).first
+  row = sizes.lines.map(&:strip).grep(/\A\d+\|\d+\z/).last
+  abort "could not read database sizes from psql" unless row
+  db_bytes, skip_bytes = row.split("|").map(&:to_i)
+  need = ((db_bytes - skip_bytes) * 1.2).to_i
+  recoverable = Dir.exist?(GOLDEN_DIR) ? `du -sk #{GOLDEN_DIR}`.split.first.to_i * 1024 : 0
+  free = `diskutil info /`[/Container Free Space:.*?\((\d+) Bytes\)/, 1].to_i
+  gb = ->(b) { format("%.1f GB", b / 1024.0**3) }
+  say "  disk: need #{gb[need]} (#{gb[db_bytes]} less #{gb[skip_bytes]} skipped, +20% for sort files)"
+  say "        have #{gb[free + recoverable]} (#{gb[free]} free + #{gb[recoverable]} released with the old golden)"
+  if need > free + recoverable
+    abort "not enough disk. Free #{gb[need - free - recoverable]} more, or add a table to GOLDEN_SKIP_DATA."
+  end
+
+  # 3. Remove the old golden. Only now, with the dump verified and the space accounted for.
+  if Dir.exist?(GOLDEN_DIR)
+    stop_cluster(GOLDEN_DIR)
+    say "\nRemoving the old golden (#{gb[recoverable]}) to make room"
+    FileUtils.rm_rf(GOLDEN_DIR)
+  end
+
+  # 4. Build the new one.
+  say "\nCreating the cluster"
+  pg("initdb -D #{GOLDEN_DIR} --locale=C -E UTF8")
+  File.open(File.join(GOLDEN_DIR, "postgresql.conf"), "a") do |f|
+    f.puts <<~CONF
+
+      # --- tract golden settings, inherited by every clone ---
+      port = #{GOLDEN_BUILD_PORT}
+      max_connections = 300
+      # fewer physical writes means less copy-on-write divergence per clone, and the
+      # cluster is disposable because the dump is the source of truth
+      fsync = off
+      full_page_writes = off
+      synchronous_commit = off
+      # anti-wraparound vacuums rewrite whole tables, which is exactly what turns a
+      # free clone into a full copy
+      autovacuum_freeze_max_age = 2000000000
+      max_wal_size = 2GB
+    CONF
+  end
+  start_cluster(GOLDEN_DIR, GOLDEN_BUILD_PORT)
+
+  say "\nRestoring"
+  pg("createdb -p #{GOLDEN_BUILD_PORT} -h localhost timber_app_development")
+  toc = filtered_toc(dump)
+  t0 = Time.now
+  out, status = Open3.capture2e(
+    "#{PG_BIN}/pg_restore -p #{GOLDEN_BUILD_PORT} -h localhost -d timber_app_development " \
+    "-j8 --no-owner --no-privileges #{"-L #{toc} " if toc}#{dump}"
+  )
+  log = File.join(GOLDEN_DIR, "restore.log")
+  File.write(log, out)
+  say "  restored in #{format("%.1f min", (Time.now - t0) / 60)}"
+
+  # A restore that hit ENOSPC has dropped indexes on the floor. Never let that pass:
+  # pg_restore's own exit status is not enough, because it reports errors it recovered
+  # from the same way as ones it did not.
+  if out.include?("No space left on device")
+    abort "the restore ran out of disk — the golden is incomplete. See #{log}"
+  end
+  errors = out.lines.grep(/error:/)
+  unless errors.empty?
+    say "  #{errors.size} pg_restore error line(s) — full output in #{log}:"
+    errors.first(8).each { |l| say "    #{l.strip}" }
+  end
+
+  %w[companies jobs job_tickets transactions].each do |t|
+    n = Open3.capture2(%(#{PG_BIN}/psql -p #{GOLDEN_BUILD_PORT} -h localhost \
+      -d timber_app_development -tAc "select count(*) from #{t}")).first.strip
+    abort "restore looks wrong: #{t} is empty" if n == "0" || n.empty?
+    say "  #{t}: #{n}"
+  end
+
+  # Row counts cannot see a missing index, which is precisely how a broken golden passed
+  # this check before. The dump's own table of contents is the reference, not the primary:
+  # the primary drifts ahead as master's migrations are applied to it, and a golden that
+  # merely predates those is fine — every clone runs db:migrate right after cloning. What
+  # is never fine is the restore failing to build something the dump actually contained.
+  want = Open3.capture2("#{PG_BIN}/pg_restore -l #{dump}").first
+    .scan(/^\d+; \d+ \d+ INDEX public (\S+)/).flatten.sort
+  got = index_list(GOLDEN_BUILD_PORT).map { |l| l.split(" ", 2).last }
+  missing = want - got
+  unless missing.empty?
+    abort <<~MISSING
+      #{missing.size} of the dump's #{want.size} indexes were not created:
+      #{missing.first(20).map { |i| "  #{i}" }.join("\n")}
+
+      The golden is NOT usable — clones would seq-scan. See #{log}.
+    MISSING
+  end
+  say "  indexes verified: all #{want.size} from the dump were created"
+
+  say "\nVACUUM (FREEZE, ANALYZE) — mandatory, see the comment above this command"
+  t0 = Time.now
+  pg(%(psql -p #{GOLDEN_BUILD_PORT} -h localhost -d timber_app_development -c "VACUUM (FREEZE, ANALYZE)"))
+  say "  froze in #{format("%.1f min", (Time.now - t0) / 60)}"
+
+  stop_cluster(GOLDEN_DIR)
+  File.delete(toc) if toc && File.exist?(toc)
+
+  say <<~DONE
+
+    #{"=" * 62}
+    golden rebuilt at #{GOLDEN_DIR} (#{`du -sh #{GOLDEN_DIR}`.split.first})
+    row data skipped  #{GOLDEN_SKIP_DATA.join(", ")} — use the primary checkout for those
+    dump kept at      #{dump}
+    free space        #{`diskutil info / | grep 'Container Free Space'`.split(":").last.strip}
+    #{"=" * 62}
+
+    Re-create any worktrees you dropped: bin/worktree new <branch>
+  DONE
+end
+
+def cmd_list
+  fmt = "%-26s %-6s %-6s %-8s %-9s %s\n"
+  printf(fmt, "WORKTREE", "SLOT", "WEB", "PG PORT", "CLUSTER", "BRANCH")
+  Dir.glob(File.join(WORKTREE_ROOT, "*")).sort.each do |path|
+    next unless File.directory?(path)
+
+    name = File.basename(path)
+    envfile = File.join(path, ".env.worktree")
+    env = File.exist?(envfile) ? File.read(envfile).scan(/^(\w+)=(.*)$/).to_h : {}
+    branch = Open3.capture2("git -C #{path} rev-parse --abbrev-ref HEAD").first.strip
+    dir = cluster_dir(name)
+    state = if !Dir.exist?(dir) then (env.empty? ? "UNPROV" : "shared")
+    elsif cluster_running?(dir) then "up"
+    else "stopped"
+    end
+    printf(fmt, name, env["TRACT_SLOT"] || "-", env["PORT"] || "-",
+      env["TRACT_DB_PORT"] || "-", state, branch)
+  end
+end
+
+def cmd_reset(name)
+  path = File.join(WORKTREE_ROOT, name)
+  abort "no such worktree: #{name}" unless Dir.exist?(path)
+  env = File.read(File.join(path, ".env.worktree")).scan(/^(\w+)=(.*)$/).to_h
+  abort "#{name} shares the primary database — nothing to reset" if env["TRACT_DB_PORT"] == "5432"
+
+  # Branch databases are disposable. After a rebase a clone can sit migrated past
+  # migration files that no longer exist, where db:rollback cannot help — re-cloning
+  # from golden is both the fix and faster than any repair.
+  say "Re-cloning #{name} from golden"
+  stop_cluster(cluster_dir(name))
+  clone_golden(name, env["TRACT_DB_PORT"].to_i)
+  sh("cd #{path} && ./bin/wt bin/rails db:migrate", check: false)
+  say "#{name} reset"
+end
+
+def cmd_rm(name)
+  abort "usage: bin/worktree rm NAME" if name.to_s.empty?
+  path = File.join(WORKTREE_ROOT, name)
+  dir = cluster_dir(name)
+  branch = if Dir.exist?(path)
+    Open3.capture2("git -C #{path} rev-parse --abbrev-ref HEAD").first.strip
+  end
+  envfile = File.join(path, ".env.worktree")
+  base = if File.exist?(envfile)
+    File.read(envfile)[/^TRACT_BASE=(.*)$/, 1]
+  end
+  base = "origin/master" if base.to_s.empty?
+
+  stop_cluster(dir)
+  FileUtils.rm_rf(dir)
+  if Dir.exist?(path)
+    # Claude Code locks the worktrees it creates for the life of its session.
+    sh("git worktree unlock #{path}", check: false, quiet: true)
+    sh("git worktree remove --force #{path}", check: false)
+  end
+  FileUtils.rm_rf(path)
+  sh("git worktree prune", check: false, quiet: true)
+
+  # Only delete generated branches, and only when they hold no commits of their own,
+  # so unmerged work is never silently discarded.
+  if branch && branch.start_with?("wt/", "worktree-")
+    unmerged = Open3.capture2("git log --oneline #{base}..#{branch}").first.strip
+    if unmerged.empty?
+      sh("git branch -D #{branch}", check: false, quiet: true)
+    else
+      say "  keeping branch #{branch} (#{unmerged.lines.size} unmerged commit(s))"
+    end
+  end
+
+  say "removed #{name} (worktree and cluster)"
+end
+
+# Claude Code's WorktreeCreate/WorktreeRemove hooks only replace git's own worktree
+# handling in a NON-git repo, so they never fire here. Kept because they cost nothing
+# and would be the right seam if that ever changes; `adopt` is the path that works.
+def cmd_hook_create
+  input = begin
+    JSON.parse($stdin.read)
+  rescue
+    {}
+  end
+  name = input["worktree_name"] || "agent-#{Time.now.to_i}"
+  from = input["base_ref"].to_s.empty? ? "origin/master" : input["base_ref"]
+  cmd_new(name, from: from)
+  # stdout carries only the result object; everything else went to stderr via say/sh.
+  $stdout.puts JSON.generate(hookSpecificOutput: {
+    hookEventName: "WorktreeCreate",
+    worktree_path: File.join(WORKTREE_ROOT, name),
+    created: true
+  })
+end
+
+def cmd_hook_remove
+  input = begin
+    JSON.parse($stdin.read)
+  rescue
+    {}
+  end
+  path = input["worktree_path"].to_s
+  cmd_rm(File.basename(path)) unless path.empty?
+end
+
+def cmd_help
+  puts <<~HELP
+    bin/worktree — parallel dev instances (see docs/git_worktree.md)
+
+    EVERYDAY
+      bin/worktree list                     what exists, which ports, which database
+      bin/worktree new NAME                 create one (branch wt/NAME off origin/master)
+      bin/worktree rm NAME                  delete worktree + cluster + branch
+      cd .claude/worktrees/NAME
+      bin/wt bin/dev                        start it  →  http://localhost:<WEB port>
+
+    ALWAYS prefix commands inside a worktree with bin/wt:
+      bin/wt rails c        bin/wt rspec        bin/wt psql
+    Without it you talk to the PRIMARY database. In the primary checkout bin/wt is a
+    no-op, so plain `bin/dev` / `rails c` keep working there.
+
+    NEW — OPTIONS
+      --from REF        base the branch on REF instead of origin/master
+                        (needed until this lands on master; also for stacked branches)
+      --own-db          force its own Postgres cluster
+      --shared-db       force sharing the primary database
+      (default: own cluster if the branch has migrations, else shared)
+
+    WHEN A BRANCH DB GOES STALE  (rebased past migrations that no longer exist)
+      bin/worktree reset NAME               re-clone from golden + re-migrate, ~1s
+      bin/worktree promote NAME             shared DB -> its own cluster (needed
+                                            before migrating a shared worktree)
+    Branch databases are disposable. Never repair one by hand.
+
+    CLAUDE CODE
+      claude -w NAME                        creates + provisions itself, own database
+      claude --bg "task"                    same, one worktree per background session
+      bin/worktree rebuild-golden [--dump PATH]
+                                            refresh golden after a production pull;
+                                            dumps the primary if no --dump is given
+      bin/worktree adopt                    provision the worktree you are standing in
+                                            (what the SessionStart hook runs for you;
+                                             also re-syncs .env from the primary)
+
+    WHAT EACH SLOT GETS                     slot N, primary is 0
+      web 3000+N   vite 3036+10N   postgres 5444+N (or 5432 shared)
+      redis db 2+2N (cache/sidekiq) and 3+2N (cable)
+      cookie _timber_app_session_wtN        so you can log into both at once
+      scheduler off, redis process skipped
+      max 3 concurrent worktrees + the primary (MAX_SLOTS)
+
+    GOTCHAS
+      Cloning is free (APFS reflink) — `du` lies, only `diskutil info /` tells the truth.
+      Golden must stay STOPPED; that is what keeps the anonymized data safe.
+      Changed the primary .env? re-run `bin/worktree adopt` in each worktree.
+      Upgraded bin/worktree? same — the generated config files are written once.
+      js: true specs all failing? a dev Vite server on this slot's port makes the
+      test env think it is a test server: `bin/worktree adopt` writes .env.test.local.
+  HELP
+end
+
+# --- dispatch ----------------------------------------------------------------
+args = ARGV.dup
+def flag_value(args, name) = args.include?(name) ? args[args.index(name) + 1] : nil
+
+case args.shift
+when "new"
+  name = args.shift
+  db = if args.include?("--own-db") then :own
+  elsif args.include?("--shared-db") then :shared
+  else :auto
+  end
+  cmd_new(name, branch: flag_value(args, "--branch"), db: db,
+    from: flag_value(args, "--from") || "origin/master")
+when "adopt" then cmd_adopt(quiet_when_noop: args.include?("--quiet"))
+when "list" then cmd_list
+when "rebuild-golden" then cmd_rebuild_golden(dump: flag_value(args, "--dump"))
+when "promote" then cmd_promote(args.shift)
+when "reset" then cmd_reset(args.shift)
+when "rm" then cmd_rm(args.shift)
+when "hook-create" then cmd_hook_create
+when "hook-remove" then cmd_hook_remove
+when "help", "-h", "--help", nil then cmd_help
+else
+  warn "unknown command. Try: bin/worktree help"
+  exit 1
+end
