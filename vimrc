@@ -382,7 +382,6 @@ let g:tagbar_type_ruby = {
 let g:ale_linters = { 'ruby': ['standardrb', 'reek']}
 
 let g:ale_fixers = {
-      \   'javascript': ['prettier'],
       \   'css': ['prettier'],
       \   'ruby': ['standardrb'],
       \}
