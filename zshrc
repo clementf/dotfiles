@@ -136,3 +136,4 @@ alias ibrew='arch -x86_64 /usr/local/bin/brew'
 # this happens only when running libvips from ruby
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 alias awk=gawk
+export PATH="/opt/cloud66/bin:${PATH}"
