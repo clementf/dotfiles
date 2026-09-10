@@ -135,3 +135,4 @@ alias ibrew='arch -x86_64 /usr/local/bin/brew'
 # as seen here https://hynek.me/til/rq-macos/
 # this happens only when running libvips from ruby
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+alias awk=gawk
