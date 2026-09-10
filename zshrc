@@ -125,9 +125,11 @@ prompt pure
 export PATH=/opt/homebrew/bin:$PATH
 alias ibrew='arch -x86_64 /usr/local/bin/brew'
 
-export LDFLAGS="-L/opt/homebrew/opt/libffi/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/libffi/include"
-export PKG_CONFIG_PATH="/opt/homebrew/opt/libffi/lib/pkgconfig"
+# need to comment this out to install ruby 3.4.4 with rbenv
+# export LDFLAGS="-L/opt/homebrew/opt/libffi/lib"
+# export CPPFLAGS="-I/opt/homebrew/opt/libffi/include"
+# export PKG_CONFIG_PATH="/opt/homebrew/opt/libffi/lib/pkgconfig"
+# export PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig
 
 # avoid errors to objc[51435]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called.
 # as seen here https://hynek.me/til/rq-macos/
